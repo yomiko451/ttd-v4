@@ -1,0 +1,52 @@
+
+
+import { UiData } from "global.slint";
+import { VerticalBox } from "std-widgets.slint";
+export component Menu inherits VerticalLayout {
+    height: 100%;
+    width: 15%;
+    Rectangle {
+        //background: UiData.menu-background;
+        height: 20%;
+        width: 100%;
+        logo := Rectangle {
+            clip: true;
+            height: logo.width;
+            width: 50%;
+            border-radius: logo.height / 2;
+            Image {
+                width: 100%;
+                height: 100%;
+                source: @image-url("assets/img/avatar.jpg");
+            }
+        }
+    }
+    VerticalLayout {
+        alignment: start;
+        spacing: UiData.space;
+        Rectangle {
+            height: UiData.menu-button-height;
+            width: 100%;
+            background: UiData.menu-button-background;
+            Text {
+                text: "主页";
+                font-size: UiData.menu-button-font-size;
+            }
+        }
+        
+    }
+    VerticalLayout {
+        alignment: end;
+        height: 20%;
+        width: 100%;
+        Rectangle {
+            height: UiData.menu-button-height;
+            width: 100%;
+            background: UiData.menu-button-background;
+            Text {
+                text: "设置";
+                font-size: UiData.menu-button-font-size;
+            }
+        }
+    }
+}

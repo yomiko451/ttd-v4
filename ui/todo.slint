@@ -1,0 +1,148 @@
+import {Date, Button, LineEdit, HorizontalBox, CheckBox, ComboBox, VerticalBox, DatePickerPopup, Slider, SpinBox, Spinner, TabWidget} from "std-widgets.slint";
+import {UiData} from "./global.slint";
+
+
+enum TodoRank {
+    Emergency,
+
+}
+
+export component Todo inherits VerticalLayout {
+    width: 100%;
+    padding-top: UiData.padding;
+    spacing: UiData.space;
+    vertical-stretch: 0;
+    function reset() {
+        selected-date = UiData.default-date;
+    }
+    property <[string]> todo-type: ["单次", "每日", "每周", "每月", "进度"];
+    property <[string]> weeks: ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
+    property <int> day: 1;
+    property <int> current-progress: 50;
+    property <int> max-progress: 100;
+    property <[string]> todo-rank: ["紧急", "普通", "可选"];
+    out property <Date> selected-date: UiData.default-date;
+    
+    HorizontalLayout {
+        spacing: UiData.padding;
+        ComboBox {
+            width: UiData.combobox-width;
+            model: todo-rank;
+            current-value: todo-rank[0];
+        }
+
+        selected-type := ComboBox {
+            width: UiData.combobox-width;
+            model: todo-type;
+            current-value: todo-type[0];
+            selected(current-value) => {
+                reset();
+            }
+        }
+
+        date-picker := DatePickerPopup {
+            close-policy: PopupClosePolicy.close-on-click-outside;
+            accepted(date) => {
+                selected-date = date;
+                self.close();
+            }
+            canceled => {
+                self.close();
+            }
+        }
+
+        if selected-type.current-index == 0: HorizontalLayout {
+            horizontal-stretch: 1;
+            spacing: UiData.padding;
+            Button {
+                text: selected-date == UiData.default-date ? "选择日期" : selected-date.year + "年" + selected-date.month + "月" + selected-date.day + "日";
+                clicked => {
+                    date-picker.show();
+                }
+            }
+        }
+        if selected-type.current-index == 1: HorizontalLayout {
+            vertical-stretch: 1;
+            Button {
+                text: selected-date == UiData.default-date ? "截止日期（可选）" : selected-date.year + "年" + selected-date.month + "月" + selected-date.day + "日";
+                clicked => {
+                    date-picker.show();
+                }
+            }
+        }
+        if selected-type.current-index == 2: HorizontalLayout {
+            vertical-stretch: 1;
+            spacing: UiData.padding;
+            ComboBox {
+                width: UiData.combobox-width;
+                model: weeks;
+                current-value: weeks[0];
+            }
+
+            Button {
+                text: selected-date == UiData.default-date ? "截止日期（可选）" : selected-date.year + "年" + selected-date.month + "月" + selected-date.day + "日";
+                clicked => {
+                    date-picker.show();
+                }
+            }
+        }
+        if selected-type.current-index == 3: HorizontalLayout {
+            vertical-stretch: 1;
+            spacing: UiData.padding;
+            SpinBox {
+                width: UiData.spinbox-width;
+                value: day;
+            }
+
+            Button {
+                text: selected-date == UiData.default-date ? "截止日期（可选）" : selected-date.year + "年" + selected-date.month + "月" + selected-date.day + "日";
+                clicked => {
+                    date-picker.show();
+                }
+            }
+        }
+        if selected-type.current-index == 4: HorizontalLayout {
+            vertical-stretch: 1;
+            spacing: UiData.padding;
+            SpinBox {
+                width: UiData.spinbox-width;
+                value: current-progress;
+                maximum: UiData.spinbox-max;
+                edited(value) => {
+                    current-progress = value;
+                }
+            }
+
+            Text {
+                text: "/";
+                vertical-alignment: center;
+                horizontal-alignment: center;
+            }
+
+            SpinBox {
+                width: UiData.spinbox-width;
+                value: max-progress;
+                maximum: UiData.spinbox-max;
+                edited(value) => {
+                    max-progress = value;
+                }
+            }
+
+            Spinner {
+                progress: current-progress / max-progress;
+            }
+        }
+    }
+
+    HorizontalLayout {
+        spacing: UiData.padding;
+        LineEdit { }
+
+        Button {
+            text: "添加待办";
+        }
+    }
+    TabWidget {
+        vertical-stretch: 1;
+    }
+}
