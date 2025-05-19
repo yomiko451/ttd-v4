@@ -1,4 +1,4 @@
-import {Date, Button, LineEdit, HorizontalBox, CheckBox, ComboBox, VerticalBox, DatePickerPopup, Slider, SpinBox, Spinner, TabWidget} from "std-widgets.slint";
+import {Date, Button, LineEdit, HorizontalBox, CheckBox, ComboBox, VerticalBox, DatePickerPopup, Slider, SpinBox, Spinner, TabWidget, GroupBox, GridBox, ListView, ScrollView} from "std-widgets.slint";
 import {UiData} from "./global.slint";
 
 
@@ -7,11 +7,20 @@ enum TodoRank {
 
 }
 
-export component Todo inherits VerticalLayout {
+component TodoCard inherits Rectangle {
+    width: 75px;
+    height: 95px;
+    background: UiData.primary-color;
+    border-radius: 10px;
+} 
+
+export component Todo inherits HorizontalLayout {
     width: 100%;
-    padding-top: UiData.padding;
-    spacing: UiData.space;
-    vertical-stretch: 0;
+    padding-top: UiData.tab-padding-top-bottom;
+    padding-bottom: UiData.tab-padding-top-bottom;
+    padding-left: UiData.tab-padding-left-right;
+    padding-right: UiData.tab-padding-left-right;
+    spacing: UiData.big-space;
     function reset() {
         selected-date = UiData.default-date;
     }
@@ -20,129 +29,154 @@ export component Todo inherits VerticalLayout {
     property <int> day: 1;
     property <int> current-progress: 50;
     property <int> max-progress: 100;
-    property <[string]> todo-rank: ["紧急", "普通", "可选"];
     out property <Date> selected-date: UiData.default-date;
-    
-    HorizontalLayout {
-        spacing: UiData.padding;
-        ComboBox {
-            width: UiData.combobox-width;
-            model: todo-rank;
-            current-value: todo-rank[0];
-        }
-
-        selected-type := ComboBox {
-            width: UiData.combobox-width;
-            model: todo-type;
-            current-value: todo-type[0];
-            selected(current-value) => {
-                reset();
-            }
-        }
-
-        date-picker := DatePickerPopup {
-            close-policy: PopupClosePolicy.close-on-click-outside;
-            accepted(date) => {
-                selected-date = date;
-                self.close();
-            }
-            canceled => {
-                self.close();
-            }
-        }
-
-        if selected-type.current-index == 0: HorizontalLayout {
-            horizontal-stretch: 1;
-            spacing: UiData.padding;
-            Button {
-                text: selected-date == UiData.default-date ? "选择日期" : selected-date.year + "年" + selected-date.month + "月" + selected-date.day + "日";
-                clicked => {
-                    date-picker.show();
-                }
-            }
-        }
-        if selected-type.current-index == 1: HorizontalLayout {
-            vertical-stretch: 1;
-            Button {
-                text: selected-date == UiData.default-date ? "截止日期（可选）" : selected-date.year + "年" + selected-date.month + "月" + selected-date.day + "日";
-                clicked => {
-                    date-picker.show();
-                }
-            }
-        }
-        if selected-type.current-index == 2: HorizontalLayout {
-            vertical-stretch: 1;
-            spacing: UiData.padding;
-            ComboBox {
+    VerticalLayout {
+        width: 40%;
+        spacing: UiData.space;
+        HorizontalLayout {
+            spacing: UiData.space;
+            selected-type := ComboBox {
                 width: UiData.combobox-width;
-                model: weeks;
-                current-value: weeks[0];
+                model: todo-type;
+                current-value: todo-type[0];
+                selected(current-value) => {
+                    reset();
+                }
             }
 
-            Button {
-                text: selected-date == UiData.default-date ? "截止日期（可选）" : selected-date.year + "年" + selected-date.month + "月" + selected-date.day + "日";
-                clicked => {
-                    date-picker.show();
+            date-picker := DatePickerPopup {
+                close-policy: PopupClosePolicy.close-on-click-outside;
+                accepted(date) => {
+                    selected-date = date;
+                    self.close();
+                }
+                canceled => {
+                    self.close();
+                }
+            }
+
+            if selected-type.current-index == 0: HorizontalLayout {
+                horizontal-stretch: 1;
+                spacing: UiData.padding;
+                Button {
+                    text: selected-date == UiData.default-date ? "选择日期" : selected-date.year + "年" + selected-date.month + "月" + selected-date.day + "日";
+                    clicked => {
+                        date-picker.show();
+                    }
+                }
+            }
+            if selected-type.current-index == 1: HorizontalLayout {
+                vertical-stretch: 1;
+                Button {
+                    text: selected-date == UiData.default-date ? "截止日期（可选）" : selected-date.year + "年" + selected-date.month + "月" + selected-date.day + "日";
+                    clicked => {
+                        date-picker.show();
+                    }
+                }
+            }
+            if selected-type.current-index == 2: HorizontalLayout {
+                vertical-stretch: 1;
+                spacing: UiData.padding;
+                ComboBox {
+                    width: UiData.combobox-width;
+                    model: weeks;
+                    current-value: weeks[0];
+                }
+
+                Button {
+                    text: selected-date == UiData.default-date ? "截止日期（可选）" : selected-date.year + "年" + selected-date.month + "月" + selected-date.day + "日";
+                    clicked => {
+                        date-picker.show();
+                    }
+                }
+            }
+            if selected-type.current-index == 3: HorizontalLayout {
+                vertical-stretch: 1;
+                spacing: UiData.padding;
+                SpinBox {
+                    width: UiData.spinbox-width;
+                    value: day;
+                }
+
+                Button {
+                    text: selected-date == UiData.default-date ? "截止日期（可选）" : selected-date.year + "年" + selected-date.month + "月" + selected-date.day + "日";
+                    clicked => {
+                        date-picker.show();
+                    }
+                }
+            }
+            if selected-type.current-index == 4: HorizontalLayout {
+                vertical-stretch: 1;
+                spacing: UiData.padding;
+                SpinBox {
+                    width: UiData.spinbox-width;
+                    value: current-progress;
+                    maximum: UiData.spinbox-max;
+                    edited(value) => {
+                        current-progress = value;
+                    }
+                }
+
+                Spinner {
+                    progress: current-progress / max-progress;
+                }
+
+                SpinBox {
+                    width: UiData.spinbox-width;
+                    value: max-progress;
+                    maximum: UiData.spinbox-max;
+                    edited(value) => {
+                        max-progress = value;
+                    }
                 }
             }
         }
-        if selected-type.current-index == 3: HorizontalLayout {
-            vertical-stretch: 1;
+
+        HorizontalLayout {
             spacing: UiData.padding;
-            SpinBox {
-                width: UiData.spinbox-width;
-                value: day;
-            }
+            LineEdit { }
 
             Button {
-                text: selected-date == UiData.default-date ? "截止日期（可选）" : selected-date.year + "年" + selected-date.month + "月" + selected-date.day + "日";
-                clicked => {
-                    date-picker.show();
-                }
+                text: "添加待办";
             }
         }
-        if selected-type.current-index == 4: HorizontalLayout {
-            vertical-stretch: 1;
-            spacing: UiData.padding;
-            SpinBox {
-                width: UiData.spinbox-width;
-                value: current-progress;
-                maximum: UiData.spinbox-max;
-                edited(value) => {
-                    current-progress = value;
-                }
-            }
+        ListView {
 
+        }
+        
+    }
+
+    VerticalLayout {
+        horizontal-stretch: 1;
+        spacing: UiData.space;
+        HorizontalLayout {
+            alignment: space-between;
+            Button {
+                text: "上一个月";
+            }
             Text {
-                text: "/";
+                text: "2020年09月";
                 vertical-alignment: center;
-                horizontal-alignment: center;
             }
-
-            SpinBox {
-                width: UiData.spinbox-width;
-                value: max-progress;
-                maximum: UiData.spinbox-max;
-                edited(value) => {
-                    max-progress = value;
-                }
+            Button {
+                text: "下一个月";
             }
-
-            Spinner {
-                progress: current-progress / max-progress;
-            }
+            
         }
-    }
-
-    HorizontalLayout {
-        spacing: UiData.padding;
-        LineEdit { }
-
-        Button {
-            text: "添加待办";
+        
+        HorizontalLayout {
+            alignment: center;
+            spacing: UiData.space;
+            height: 95%;
+                for i in 7: VerticalLayout {
+                    alignment: center;
+                    spacing: UiData.space;
+                    for i in 6: TodoCard {
+                        
+                    }
+                } 
         }
-    }
-    TabWidget {
-        vertical-stretch: 1;
+        
     }
 }
+

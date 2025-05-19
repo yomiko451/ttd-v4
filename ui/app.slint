@@ -2,15 +2,27 @@ import {Button, HorizontalBox, VerticalBox, TabWidget} from "std-widgets.slint";
 import {Todo} from "./todo.slint";
 import "./assets/font/LXGWWenKaiGBScreen.ttf";
 import { Menu } from "menu.slint";
-
+import { Anime } from "anime.slint";
+import { UiData, Tab } from "global.slint";
 
 export component AppWindow inherits Window {
     default-font-family: "霞鹜文楷 GB 屏幕阅读版";
-    default-font-size: 16px;
-    preferred-height: 720px;
-    preferred-width: 1280px;
+    default-font-size: UiData.default-font-size;
+    preferred-height: UiData.app-height;
+    preferred-width: UiData.app-width;
     HorizontalLayout {
-        Menu {}
+        Rectangle {
+            height: 100%;
+            width: 15%;
+            background: UiData.primary-color;
+            Menu { }
+        }
 
+        Rectangle {
+            width: 85%;
+            height: 100%;
+            if UiData.current-tab == Tab.Todo: Todo {}
+            if UiData.current-tab == Tab.Anime: Anime {}
+        }
     }
-} 
+}

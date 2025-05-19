@@ -1,22 +1,5 @@
 import {Date} from "std-widgets.slint";
 
-export global UiData {
-    out property <int> spinbox-max: 10000;
-    in-out property <length> spinbox-width: 120px;
-    in-out property <length> combobox-width: 100px;
-    in-out property <length> space: 5px;
-    in-out property <length> padding: 5px;
-    in-out property <color> menu-background: #82AA82; //TODO: 要不要
-    in-out property <length> menu-button-height: 60px;
-    in-out property <color> menu-button-background: #82AA82;
-    in-out property <length> menu-button-font-size: 20px;
-    out property <Date> default-date: {
-        year: 2025,
-        month: 1,
-        day: 1
-    };
-}
-
 struct Todo {
     text: string,
     created-at: string,
@@ -24,6 +7,42 @@ struct Todo {
     rank: string
 }
 
+export enum Tab {
+    Home,
+    Todo,
+    Anime,
+    News,
+    Stats
+}
+
+export global UiData {
+    in-out property <length> app-width: 1280px;
+    in-out property <length> app-height: 720px;
+    in-out property <color> primary-color: rgb(237, 239, 239);
+    in-out property <color> primary-text-color: #303133;
+    in-out property <length> default-font-size: 14px;
+    in-out property <length> tab-padding-top-bottom: 30px;
+    in-out property <length> tab-padding-left-right: 15px;
+    out property <int> spinbox-max: 10000;
+    in-out property <length> spinbox-width: 110px;
+    in-out property <length> combobox-width: 100px;
+    in-out property <length> space: 5px;
+    in-out property <length> big-space: 15px;
+    in-out property <length> padding: 5px;
+    in-out property <color> primary-button-color: rgb(221, 221, 221);
+    in-out property <length> menu-button-height: 50px;
+    in-out property <length> menu-button-font-size: 18px;
+    in-out property <Date> default-date: {
+        year: 2025,
+        month: 1,
+        day: 1
+    };
+    in-out property <Tab> current-tab: Tab.Home;
+}
+
+
+
 export global TodoData {
     in-out property <[Todo]> todo-list;
 }
+

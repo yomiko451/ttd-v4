@@ -1,0 +1,38 @@
+import {UiData} from "global.slint";
+
+import { TabWidget } from "std-widgets.slint";
+export component Anime inherits VerticalLayout {
+    width: 100%;
+    padding-top: UiData.tab-padding-top-bottom;
+    padding-bottom: UiData.tab-padding-top-bottom;
+    padding-left: UiData.tab-padding-left-right;
+    padding-right: UiData.tab-padding-left-right;
+    spacing: UiData.big-space;
+    Text {
+        text: "anime";
+    }
+    TabWidget {
+        Tab {
+            title: "周一（月）";
+        }
+        Tab {
+            title: "周二（火）";
+        }
+        Tab {
+            title: "周三（水）";
+        }
+        Tab {
+            title: "周四（木）";
+        }
+        Tab {
+            title: "周五（金）";
+        }
+        Tab {
+            title: "周六（土）";
+        }
+        Tab {
+            title: "周日（日）";
+        }
+    }
+    
+}

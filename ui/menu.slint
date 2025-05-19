@@ -1,18 +1,16 @@
 
 
-import { UiData } from "global.slint";
+import { UiData, Tab } from "global.slint";
 import { VerticalBox } from "std-widgets.slint";
 export component Menu inherits VerticalLayout {
-    height: 100%;
-    width: 15%;
+    width: 100%;
     Rectangle {
-        //background: UiData.menu-background;
-        height: 20%;
+        height: 25%;
         width: 100%;
         logo := Rectangle {
             clip: true;
             height: logo.width;
-            width: 50%;
+            width: 40%;
             border-radius: logo.height / 2;
             Image {
                 width: 100%;
@@ -27,11 +25,92 @@ export component Menu inherits VerticalLayout {
         Rectangle {
             height: UiData.menu-button-height;
             width: 100%;
-            background: UiData.menu-button-background;
             Text {
                 text: "主页";
                 font-size: UiData.menu-button-font-size;
             }
+            TouchArea {
+                clicked => {
+                    UiData.current-tab = Tab.Home;
+                }
+            }
+            states [
+                active when UiData.current-tab == Tab.Home:  {
+                    background: UiData.primary-button-color;
+                }
+            ]
+        }
+        Rectangle {
+            height: UiData.menu-button-height;
+            width: 100%;
+            Text {
+                text: "待办";
+                font-size: UiData.menu-button-font-size;
+            }
+            TouchArea {
+                clicked => {
+                    UiData.current-tab = Tab.Todo;
+                }
+            }
+            states [
+                active when UiData.current-tab == Tab.Todo:  {
+                    background: UiData.primary-button-color;
+                }
+            ]
+        }
+        Rectangle {
+            height: UiData.menu-button-height;
+            width: 100%;
+            Text {
+                text: "番剧";
+                font-size: UiData.menu-button-font-size;
+            }
+            TouchArea {
+                clicked => {
+                    UiData.current-tab = Tab.Anime;
+                }
+            }
+            states [
+                active when UiData.current-tab == Tab.Anime:  {
+                    background: UiData.primary-button-color;
+                }
+            ]
+        }
+        Rectangle {
+            height: UiData.menu-button-height;
+            width: 100%;
+            Text {
+                text: "新闻";
+                font-size: UiData.menu-button-font-size;
+            }
+            TouchArea {
+                clicked => {
+                    UiData.current-tab = Tab.News;
+                }
+            }
+            states [
+                active when UiData.current-tab == Tab.News:  {
+                    background: UiData.primary-button-color;
+                }
+            ]
+        }
+        Rectangle {
+            height: UiData.menu-button-height;
+            width: 100%;
+            Text {
+                text: "统计";
+                font-size: UiData.menu-button-font-size;
+            }
+            TouchArea {
+                clicked => {
+                    UiData.current-tab = Tab.Stats;
+                }
+            }
+            states [
+                active when UiData.current-tab == Tab.Stats:  {
+                    background: UiData.primary-button-color;
+                }
+            ]
         }
         
     }
@@ -42,7 +121,6 @@ export component Menu inherits VerticalLayout {
         Rectangle {
             height: UiData.menu-button-height;
             width: 100%;
-            background: UiData.menu-button-background;
             Text {
                 text: "设置";
                 font-size: UiData.menu-button-font-size;
