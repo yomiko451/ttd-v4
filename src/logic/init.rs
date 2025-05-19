@@ -1,0 +1,24 @@
+use std::path::PathBuf;
+use std::sync::LazyLock;
+
+
+pub const APP_PATH: LazyLock<PathBuf> = LazyLock::new(||{
+    let path = std::env::var("APPDATA").unwrap();
+    let app_path = PathBuf::from(path).join(".ttd_v4");
+    if !app_path.exists() {
+        std::fs::create_dir(&app_path).unwrap();
+    }
+    app_path
+});
+
+pub fn init() {
+    check_data_dir();
+}
+
+
+fn check_data_dir() {
+    let anime_path = APP_PATH.join("covers");
+    if !anime_path.exists() {
+        std::fs::create_dir(&anime_path).unwrap();
+    }
+}

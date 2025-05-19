@@ -15,12 +15,48 @@ export enum Tab {
     Stats
 }
 
+enum Weekday {
+    Monday,
+    Tuesday,
+    Wednesday,
+    Thursday,
+    Friday,
+    Saturday,
+    Sunday
+}
+
+struct Anime {
+    name: string,
+    cover: image,
+}
+
+export struct DayAnime {
+    day: Weekday,
+    text: string,
+    anime-list: [Anime]
+}
+
+export global AnimeData {
+    callback get-anime-data;
+    in-out property <[DayAnime]> week-anime-list: [
+        {day: Weekday.Monday, text: "周一（月）", anime-list: []},
+        {day: Weekday.Tuesday, text: "周二（火）", anime-list: []},
+        {day: Weekday.Wednesday, text: "周三（水）", anime-list: []},
+        {day: Weekday.Thursday, text: "周四（木）", anime-list: []},
+        {day: Weekday.Friday, text: "周五（金）", anime-list: []},
+        {day: Weekday.Saturday, text: "周六（土）", anime-list: []},
+        {day: Weekday.Sunday, text: "周日（日）", anime-list: []}
+    ];
+    
+}
+
 export global UiData {
     in-out property <length> app-width: 1280px;
-    in-out property <length> app-height: 720px;
+    in-out property <length> app-height: 800px;
     in-out property <color> primary-color: rgb(237, 239, 239);
     in-out property <color> primary-text-color: #303133;
     in-out property <length> default-font-size: 14px;
+    in-out property <length> default-font-size-big: 18px;
     in-out property <length> tab-padding-top-bottom: 30px;
     in-out property <length> tab-padding-left-right: 15px;
     out property <int> spinbox-max: 10000;
@@ -32,6 +68,9 @@ export global UiData {
     in-out property <color> primary-button-color: rgb(221, 221, 221);
     in-out property <length> menu-button-height: 50px;
     in-out property <length> menu-button-font-size: 18px;
+
+    in-out property <length> anime-list-title-height: 30px;
+
     in-out property <Date> default-date: {
         year: 2025,
         month: 1,

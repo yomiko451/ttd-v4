@@ -1,38 +1,50 @@
-import {UiData} from "global.slint";
+import {UiData, DayAnime, AnimeData} from "global.slint";
 
-import { TabWidget } from "std-widgets.slint";
+import { TabWidget, StandardTableView, GroupBox, ScrollView, ListView } from "std-widgets.slint";
 export component Anime inherits VerticalLayout {
     width: 100%;
     padding-top: UiData.tab-padding-top-bottom;
     padding-bottom: UiData.tab-padding-top-bottom;
     padding-left: UiData.tab-padding-left-right;
     padding-right: UiData.tab-padding-left-right;
-    spacing: UiData.big-space;
+    spacing: UiData.big-space; //TODO: 这个spacing还要不要
     Text {
-        text: "anime";
+        text: "新番日历-数据源长门有C";
+        font-size: UiData.default-font-size-big;
     }
-    TabWidget {
-        Tab {
-            title: "周一（月）";
-        }
-        Tab {
-            title: "周二（火）";
-        }
-        Tab {
-            title: "周三（水）";
-        }
-        Tab {
-            title: "周四（木）";
-        }
-        Tab {
-            title: "周五（金）";
-        }
-        Tab {
-            title: "周六（土）";
-        }
-        Tab {
-            title: "周日（日）";
+
+    ListView {
+        for day-anime in AnimeData.week-anime-list: VerticalLayout {
+            padding: UiData.padding;
+            spacing: UiData.space;
+            Rectangle {
+                background: UiData.primary-color;
+                height: UiData.anime-list-title-height;
+                width: 100%;
+                Text {
+                    text: day-anime.text;
+                    horizontal-alignment: center;
+                    font-size: UiData.default-font-size-big;
+                }
+            }
+
+            HorizontalLayout {
+                spacing: UiData.space;
+                for anime in day-anime.anime-list: VerticalLayout {
+                    Image {
+                        source: anime.cover;
+                        width: 120px;
+                        height: 150px;
+                    }
+
+                    Text {
+                        width: 120px;
+                        text: anime.name;
+                        wrap: word-wrap;
+                        horizontal-alignment: center;
+                    }
+                }
+            }
         }
     }
-    
 }
