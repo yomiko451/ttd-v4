@@ -14,7 +14,7 @@ export enum Tab {
     News,
     Stats
 }
-
+@rust-attr(derive(Eq, Hash, serde::Serialize, serde::Deserialize))
 enum Weekday {
     Monday,
     Tuesday,

@@ -2565,6 +2565,7 @@ dependencies = [
  "rustybuzz",
  "scoped-tls-hkt",
  "scopeguard",
+ "serde",
  "slab",
  "strum",
  "sys-locale",
@@ -5658,8 +5659,11 @@ checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 name = "ttd-v4"
 version = "0.1.0"
 dependencies = [
+ "image",
  "reqwest",
  "scraper",
+ "serde",
+ "serde_json",
  "slint",
  "slint-build",
 ]
