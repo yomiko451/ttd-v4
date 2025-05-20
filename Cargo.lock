@@ -5666,6 +5666,7 @@ dependencies = [
  "serde_json",
  "slint",
  "slint-build",
+ "tokio",
 ]
 
 [[package]]

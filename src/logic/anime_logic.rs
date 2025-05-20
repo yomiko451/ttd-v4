@@ -1,11 +1,13 @@
 use crate::{Anime, AnimeData, AppWindow, DayAnime};
 use crate::logic::APP_PATH;
+use reqwest::Client;
 use scraper::{Html, Selector};
 use slint::{
     ComponentHandle, Image, Model, Rgba8Pixel, SharedPixelBuffer, Weak,
     invoke_from_event_loop,
 };
-use std::{io::Write, path::PathBuf, rc::Rc};
+use std::{io::Write, rc::Rc};
+use tokio::runtime::Runtime;
 
 const BASE_URL: &str = "https://yuc.wiki/202501";
 
@@ -25,7 +27,7 @@ pub fn anime_logic(app: Weak<AppWindow>) {
                     .into_iter()
                     .map(|(n, img)| Anime {
                         name: n.into(),
-                        cover: Image::from_rgba8(img),
+                        cover: Image::from_rgba8(img.unwrap()),//TODO: 这里需要处理图片加载失败的情况
                     })
                     .collect::<Vec<Anime>>();
                 week_anime_list[i].anime_list = Rc::new(slint::VecModel::from(list)).into();
@@ -38,7 +40,7 @@ pub fn anime_logic(app: Weak<AppWindow>) {
     });
 }
 
-fn parse_html(url: &str) -> Vec<Vec<(String, SharedPixelBuffer<Rgba8Pixel>)>> {
+fn parse_html(url: &str) -> Vec<Vec<(String, Option<SharedPixelBuffer<Rgba8Pixel>>)>> {
     let anime_data_path = APP_PATH.join("data").join("anime.json");
     if anime_data_path.exists() {
         let list: Vec<Vec<String>> =
@@ -48,10 +50,9 @@ fn parse_html(url: &str) -> Vec<Vec<(String, SharedPixelBuffer<Rgba8Pixel>)>> {
             .map(|n| {
                 n.into_iter()
                     .map(|n| {
-                        let path = APP_PATH.join("covers").join(&n).with_extension("jpg");
-                        (n, load_img_from_path(path))
+                        (n.clone(), load_img_from_path(&n))
                     })
-                    .collect::<Vec<(String, SharedPixelBuffer<Rgba8Pixel>)>>()
+                    .collect::<Vec<(String, Option<SharedPixelBuffer<Rgba8Pixel>>)>>()
             })
             .collect();
         return week_anime_list;
@@ -62,7 +63,8 @@ fn parse_html(url: &str) -> Vec<Vec<(String, SharedPixelBuffer<Rgba8Pixel>)>> {
     let html = response.text().unwrap();
     let document = Html::parse_document(&html);
     let selector = Selector::parse("div.post-body>div").unwrap();
-
+    let client = Client::new();
+    let mut handles = vec![];
     document
         .select(&selector)
         .take(20)
@@ -82,34 +84,54 @@ fn parse_html(url: &str) -> Vec<Vec<(String, SharedPixelBuffer<Rgba8Pixel>)>> {
                 .select(&cover_selector)
                 .map(|ce| ce.value().attr("data-src").unwrap_or("").to_string())
                 .collect::<Vec<String>>();
-            let anime_list = names
-                .iter()
+            let anime_list = names.clone()
+                .into_iter()
                 .zip(covers.into_iter())
                 .map(|(n, c)| {
-                    let cover_path = get_cover(&c, &n);
-                    let img = load_img_from_path(cover_path);
-                    (n.to_owned(), img)
+                    
+                    
+                    (n, c)
                 })
-                .collect::<Vec<(String, SharedPixelBuffer<Rgba8Pixel>)>>();
+                .collect::<Vec<(String, String)>>();
             name_list.push(names);
             week_anime_list.push(anime_list);
         });
+    Runtime::new()
+        .unwrap()
+        .block_on(async {
+            for names in week_anime_list {
+                for (n, c) in names {
+                    let handle = tokio::spawn(get_cover(c, n, client.clone()));
+                    handles.push(handle);
+                }
+            }
+            for handle in handles {
+                let _ = handle.await;
+            }
+        });
     serde_json::to_writer_pretty(std::fs::File::create(&anime_data_path).unwrap(), &name_list)
         .unwrap();
-    week_anime_list
+    let mut result = vec![];
+    for names in &mut name_list {
+        let mut temp = vec![];
+        for n in names {
+            temp.push((n.clone(), load_img_from_path(&n)));
+        }
+        result.push(temp);
+    }
+    result
 }
 
-fn get_cover(cover: &str, name: &str) -> PathBuf {
+async fn get_cover(cover: String, name: String, client: Client) {
     let save_path = APP_PATH.join("covers");
     let path = save_path.join(name).with_extension("jpg");
-    if path.exists() {
-        return path;
-    }
-    let response = reqwest::blocking::get(cover).unwrap();
-    let bytes = response.bytes().unwrap();
+    if !path.exists() {
+        let response = client.get(cover).send().await.unwrap();
+    let bytes = response.bytes().await.unwrap();
     let mut file = std::fs::File::create(&path).unwrap();
     file.write_all(&bytes).unwrap();
-    path
+    }
+    
 }
 
 //确保字符串符合文件名的要求，如果不符合要求，则加以修改
@@ -126,7 +148,9 @@ fn get_valid_filename(name: &str) -> String {
     valid_name
 }
 
-fn load_img_from_path(path: PathBuf) -> SharedPixelBuffer<Rgba8Pixel> {
+fn load_img_from_path(name: &str) -> Option<SharedPixelBuffer<Rgba8Pixel>> {
+    let path = APP_PATH.join("covers").join(name).with_extension("jpg");
     let img = image::open(&path).unwrap().into_rgba8();
-    SharedPixelBuffer::<Rgba8Pixel>::clone_from_slice(img.as_raw(), img.width(), img.height())
+    let buffer = SharedPixelBuffer::<Rgba8Pixel>::clone_from_slice(img.as_raw(), img.width(), img.height());
+    Some(buffer)
 }
