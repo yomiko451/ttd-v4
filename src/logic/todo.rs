@@ -6,11 +6,26 @@ use crate::{AppWindow, Date, TodoData };
 pub const CURRENT_DATE: LazyLock<NaiveDate> = LazyLock::new(|| {
     Local::now().date_naive()
 });
+
+pub fn set_todo_logic(app: Weak<AppWindow>) {
+    let app = app.unwrap();
+    let todo_data = app.global::<TodoData>();
+    let weak = app.as_weak();
+    todo_data.on_update_calendar(move || {
+        let app = weak.unwrap();
+        let todo_data = app.global::<TodoData>();
+        let new_date = todo_data.get_current_date();
+        let new_calendar = get_month_calendar(convert_date_to_naivedate(new_date));
+        let model = convert_vec_to_model(new_calendar);
+        todo_data.set_calendar(model);
+    });
+}
+
 pub fn init_calendar(app: Weak<AppWindow>) {
     let app = app.unwrap();
     let todo_data = app.global::<TodoData>();
     let current_date = get_month_calendar(*CURRENT_DATE);
-    let model = change_vec_to_model(current_date);
+    let model = convert_vec_to_model(current_date);
     todo_data.set_calendar(model);
     // 顺便初始化当前日期
     todo_data.set_current_date(get_current_date());
@@ -57,13 +72,17 @@ fn get_month_calendar(date: NaiveDate) -> Vec<Vec<i32>> {
     weekdays
 }
 
-fn change_vec_to_model(vec: Vec<Vec<i32>>) -> ModelRc<ModelRc<i32>> {
+fn convert_vec_to_model(vec: Vec<Vec<i32>>) -> ModelRc<ModelRc<i32>> {
     let mut model = vec![];
     for i in vec {
         let m: ModelRc<i32> = Rc::new(slint::VecModel::from(i)).into();
         model.push(m);
     };
     Rc::new(slint::VecModel::from(model)).into()
+}
+
+fn convert_date_to_naivedate(date: Date) -> NaiveDate {
+    NaiveDate::from_ymd_opt(date.year, date.month as u32, date.day as u32).unwrap()
 }
 
 #[cfg(test)]

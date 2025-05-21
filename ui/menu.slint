@@ -7,21 +7,37 @@ export component Menu inherits VerticalLayout {
     Rectangle {
         height: 25%;
         width: 100%;
-        logo := Rectangle {
+        Rectangle {
             clip: true;
-            height: logo.width;
-            width: 40%;
-            border-radius: logo.height / 2;
+            height: UiData.avatar-size;
+            width: UiData.avatar-size;
+            border-radius: UiData.avatar-size / 2;
             Image {
                 width: 100%;
                 height: 100%;
                 source: @image-url("assets/img/avatar.jpg");
             }
+            ta := TouchArea {
+                
+            }
+            states [
+               active when ta.has-hover: {
+                width: UiData.avatar-size-big;
+                height: UiData.avatar-size-big;
+                border-radius: UiData.avatar-size-big / 2;
+               }
+            ]
+            animate width, height, border-radius {
+                duration: 0.3s;
+                easing: ease-in-out;
+            }
         }
     }
+
     VerticalLayout {
         alignment: start;
         spacing: UiData.space;
+        vertical-stretch: 1;
         Rectangle {
             height: UiData.menu-button-height;
             width: 100%;
@@ -30,17 +46,20 @@ export component Menu inherits VerticalLayout {
                 font-size: UiData.menu-button-font-size;
                 color: UiData.secondry-text-color;
             }
+
             TouchArea {
                 clicked => {
                     UiData.current-tab = Tab.Home;
                 }
             }
+
             states [
-                active when UiData.current-tab == Tab.Home:  {
+                active when UiData.current-tab == Tab.Home: {
                     background: UiData.menu-button-clicked-color;
                 }
             ]
         }
+
         Rectangle {
             height: UiData.menu-button-height;
             width: 100%;
@@ -49,17 +68,20 @@ export component Menu inherits VerticalLayout {
                 font-size: UiData.menu-button-font-size;
                 color: UiData.secondry-text-color;
             }
+
             TouchArea {
                 clicked => {
                     UiData.current-tab = Tab.Todo;
                 }
             }
+
             states [
-                active when UiData.current-tab == Tab.Todo:  {
+                active when UiData.current-tab == Tab.Todo: {
                     background: UiData.menu-button-clicked-color;
                 }
             ]
         }
+
         Rectangle {
             height: UiData.menu-button-height;
             width: 100%;
@@ -68,17 +90,20 @@ export component Menu inherits VerticalLayout {
                 font-size: UiData.menu-button-font-size;
                 color: UiData.secondry-text-color;
             }
+
             TouchArea {
                 clicked => {
                     UiData.current-tab = Tab.Anime;
                 }
             }
+
             states [
-                active when UiData.current-tab == Tab.Anime:  {
+                active when UiData.current-tab == Tab.Anime: {
                     background: UiData.menu-button-clicked-color;
                 }
             ]
         }
+
         Rectangle {
             height: UiData.menu-button-height;
             width: 100%;
@@ -87,17 +112,20 @@ export component Menu inherits VerticalLayout {
                 font-size: UiData.menu-button-font-size;
                 color: UiData.secondry-text-color;
             }
+
             TouchArea {
                 clicked => {
                     UiData.current-tab = Tab.News;
                 }
             }
+
             states [
-                active when UiData.current-tab == Tab.News:  {
+                active when UiData.current-tab == Tab.News: {
                     background: UiData.menu-button-clicked-color;
                 }
             ]
         }
+
         Rectangle {
             height: UiData.menu-button-height;
             width: 100%;
@@ -106,28 +134,29 @@ export component Menu inherits VerticalLayout {
                 font-size: UiData.menu-button-font-size;
                 color: UiData.secondry-text-color;
             }
+
             TouchArea {
                 clicked => {
                     UiData.current-tab = Tab.Stats;
                 }
             }
+
             states [
-                active when UiData.current-tab == Tab.Stats:  {
+                active when UiData.current-tab == Tab.Stats: {
                     background: UiData.menu-button-clicked-color;
                 }
             ]
         }
-        
     }
+
     VerticalLayout {
-        alignment: end;
-        height: 20%;
         width: 100%;
+        padding-bottom: UiData.tab-padding-top-bottom;
         Rectangle {
             height: UiData.menu-button-height;
             width: 100%;
             Text {
-                text: "设置";
+                text: "关于";
                 font-size: UiData.menu-button-font-size;
                 color: UiData.secondry-text-color;
             }

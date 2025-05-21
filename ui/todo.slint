@@ -173,6 +173,15 @@ export component Todo inherits HorizontalLayout {
             alignment: space-between;
             Button {
                 text: "上一个月";
+                clicked => {
+                    if TodoData.current-date.month - 1 < 1 {
+                        TodoData.current-date.month = 12;
+                        TodoData.current-date.year -= 1;
+                    } else {
+                        TodoData.current-date.month -= 1;
+                    };
+                    TodoData.update-calendar();
+                }
             }
             Text {
                 text: TodoData.current-date.year + "年" + TodoData.current-date.month + "月";
@@ -181,6 +190,15 @@ export component Todo inherits HorizontalLayout {
             }
             Button {
                 text: "下一个月";
+                clicked => {
+                    if TodoData.current-date.month + 1 > 12 {
+                        TodoData.current-date.month = 1;
+                        TodoData.current-date.year += 1;
+                    } else {
+                        TodoData.current-date.month += 1;
+                    };
+                    TodoData.update-calendar();
+                }
             }
             
         }

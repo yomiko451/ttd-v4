@@ -16,23 +16,7 @@ pub fn set_anime_logic(app_weak: Weak<AppWindow>) {
     let app = app_weak.unwrap();
     let anime_data = app.global::<AnimeData>();
     let weak = app_weak.clone();
-    anime_data.on_previous_schedule(move || {
-        let app = weak.clone().unwrap();
-        let anime_data = app.global::<AnimeData>();
-        let anime_schedule = anime_data.get_anime_schedule();
-        let previous_date = previous_schedule(anime_schedule);
-        anime_data.set_anime_schedule(previous_date.clone());
-        //get_anime(app.as_weak(), previous_date); //TODO: 这里需要重新获取数据
-    });
-    let weak = app_weak.clone();
-    anime_data.on_next_schedule(move || {
-        let app = weak.clone().unwrap();
-        let anime_data = app.global::<AnimeData>();
-        let anime_schedule = anime_data.get_anime_schedule();
-        let next_date = next_schedule(anime_schedule);
-        anime_data.set_anime_schedule(next_date.clone());
-        //get_anime(app.as_weak(), next_date); //TODO: 这里需要重新获取数据
-    });
+    //TODO: 
 }
 
 pub fn get_anime(app_weak: Weak<AppWindow>, anime_schedule: Date) {
@@ -58,8 +42,9 @@ pub fn get_anime(app_weak: Weak<AppWindow>, anime_schedule: Date) {
                 week_anime_list[i].anime_list = Rc::new(slint::VecModel::from(list)).into();
             }
 
-            app.global::<AnimeData>()
-                .set_week_anime_list(Rc::new(slint::VecModel::from(week_anime_list)).into());
+            let anime_data = app.global::<AnimeData>();
+                anime_data.set_week_anime_list(Rc::new(slint::VecModel::from(week_anime_list)).into());
+                anime_data.set_is_loading(false);
         })
         .unwrap();
     });
@@ -199,27 +184,4 @@ pub fn init_anime_schedule(app: Weak<AppWindow>) -> Date {
     app.global::<AnimeData>()
         .set_anime_schedule(anime_schedule.clone());
     anime_schedule
-}
-
-
-fn next_schedule(mut date: Date) -> Date {
-    let old_date = date.clone();
-    date.month += 3;
-    if date.month > 12 {
-        date.month = 1;
-        date.year += 1;
-    }
-    if date.year > CURRENT_DATE.year() as i32 || (date.year == CURRENT_DATE.year() as i32 && date.month >= CURRENT_DATE.month() as i32) {
-        return old_date;
-    }
-    date
-}
-
-fn previous_schedule(mut date: Date) -> Date {
-    date.month -= 3;
-    if date.month < 1 {
-        date.month = 10;
-        date.year -= 1;
-    }
-    date
 }
