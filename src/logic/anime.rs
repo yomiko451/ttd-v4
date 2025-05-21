@@ -1,4 +1,4 @@
-use crate::logic::APP_PATH;
+use crate::{logic::APP_PATH, logic::CURRENT_DATE};
 use crate::{Anime, AnimeData, AppWindow, Date, DayAnime};
 use chrono::{Datelike, Local, NaiveDate};
 use reqwest::Client;
@@ -10,9 +10,7 @@ use std::{io::Write, rc::Rc, sync::LazyLock};
 use tokio::runtime::Runtime;
 
 const BASE_URL: &str = "https://yuc.wiki/";
-const CURRENT_DATE: LazyLock<NaiveDate> = LazyLock::new(|| {
-    Local::now().date_naive()
-});
+
 
 pub fn set_anime_logic(app_weak: Weak<AppWindow>) {
     let app = app_weak.unwrap();

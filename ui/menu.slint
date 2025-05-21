@@ -28,6 +28,7 @@ export component Menu inherits VerticalLayout {
             Text {
                 text: "主页";
                 font-size: UiData.menu-button-font-size;
+                color: UiData.secondry-text-color;
             }
             TouchArea {
                 clicked => {
@@ -36,7 +37,7 @@ export component Menu inherits VerticalLayout {
             }
             states [
                 active when UiData.current-tab == Tab.Home:  {
-                    background: UiData.primary-button-color;
+                    background: UiData.menu-button-clicked-color;
                 }
             ]
         }
@@ -46,6 +47,7 @@ export component Menu inherits VerticalLayout {
             Text {
                 text: "待办";
                 font-size: UiData.menu-button-font-size;
+                color: UiData.secondry-text-color;
             }
             TouchArea {
                 clicked => {
@@ -54,7 +56,7 @@ export component Menu inherits VerticalLayout {
             }
             states [
                 active when UiData.current-tab == Tab.Todo:  {
-                    background: UiData.primary-button-color;
+                    background: UiData.menu-button-clicked-color;
                 }
             ]
         }
@@ -64,6 +66,7 @@ export component Menu inherits VerticalLayout {
             Text {
                 text: "番剧";
                 font-size: UiData.menu-button-font-size;
+                color: UiData.secondry-text-color;
             }
             TouchArea {
                 clicked => {
@@ -72,7 +75,7 @@ export component Menu inherits VerticalLayout {
             }
             states [
                 active when UiData.current-tab == Tab.Anime:  {
-                    background: UiData.primary-button-color;
+                    background: UiData.menu-button-clicked-color;
                 }
             ]
         }
@@ -82,6 +85,7 @@ export component Menu inherits VerticalLayout {
             Text {
                 text: "新闻";
                 font-size: UiData.menu-button-font-size;
+                color: UiData.secondry-text-color;
             }
             TouchArea {
                 clicked => {
@@ -90,7 +94,7 @@ export component Menu inherits VerticalLayout {
             }
             states [
                 active when UiData.current-tab == Tab.News:  {
-                    background: UiData.primary-button-color;
+                    background: UiData.menu-button-clicked-color;
                 }
             ]
         }
@@ -100,6 +104,7 @@ export component Menu inherits VerticalLayout {
             Text {
                 text: "统计";
                 font-size: UiData.menu-button-font-size;
+                color: UiData.secondry-text-color;
             }
             TouchArea {
                 clicked => {
@@ -108,7 +113,7 @@ export component Menu inherits VerticalLayout {
             }
             states [
                 active when UiData.current-tab == Tab.Stats:  {
-                    background: UiData.primary-button-color;
+                    background: UiData.menu-button-clicked-color;
                 }
             ]
         }
@@ -124,6 +129,7 @@ export component Menu inherits VerticalLayout {
             Text {
                 text: "设置";
                 font-size: UiData.menu-button-font-size;
+                color: UiData.secondry-text-color;
             }
         }
     }

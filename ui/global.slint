@@ -56,8 +56,11 @@ export global AnimeData {
 export global UiData {
     in-out property <length> app-width: 1280px;
     in-out property <length> app-height: 800px;
-    in-out property <color> primary-color: rgb(237, 239, 239);
+    in-out property <color> primary-color: #88C9A1;//rgb(237, 239, 239);
+    in-out property <color> menu-button-clicked-color: #5BB48B;//rgb(221, 221, 221);
+    
     in-out property <color> primary-text-color: #303133;
+    in-out property <color> secondry-text-color: #FFFFFF;
     in-out property <length> default-font-size: 14px;
     in-out property <length> default-font-size-big: 18px;
     in-out property <length> tab-padding-top-bottom: 30px;
@@ -68,7 +71,7 @@ export global UiData {
     in-out property <length> space: 5px;
     in-out property <length> big-space: 15px;
     in-out property <length> padding: 5px;
-    in-out property <color> primary-button-color: rgb(221, 221, 221);
+    
     in-out property <length> menu-button-height: 50px;
     in-out property <length> menu-button-font-size: 18px;
 
@@ -85,6 +88,7 @@ export global UiData {
 
 
 export global TodoData {
+    in-out property <[[int]]> calendar;
     in-out property <[Todo]> todo-list;
 }
 
