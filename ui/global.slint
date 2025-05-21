@@ -62,7 +62,7 @@ export global UiData {
     in-out property <color> primary-text-color: #303133;
     in-out property <color> secondry-text-color: #FFFFFF;
     in-out property <length> default-font-size: 14px;
-    in-out property <length> default-font-size-big: 18px;
+    in-out property <length> font-size-big: 16px;
     in-out property <length> tab-padding-top-bottom: 30px;
     in-out property <length> tab-padding-left-right: 15px;
     out property <int> spinbox-max: 10000;
@@ -71,7 +71,8 @@ export global UiData {
     in-out property <length> space: 5px;
     in-out property <length> big-space: 15px;
     in-out property <length> padding: 5px;
-    
+    in-out property <length> border-radius-big: 10px;
+    in-out property <length> border-radius: 5px;
     in-out property <length> menu-button-height: 50px;
     in-out property <length> menu-button-font-size: 18px;
 
@@ -89,6 +90,7 @@ export global UiData {
 
 export global TodoData {
     in-out property <[[int]]> calendar;
+    in-out property <Date> current-date;
     in-out property <[Todo]> todo-list;
 }
 

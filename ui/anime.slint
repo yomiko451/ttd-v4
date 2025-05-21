@@ -9,10 +9,11 @@ export component Anime inherits VerticalLayout {
     padding-right: UiData.tab-padding-left-right;
     HorizontalLayout {
         spacing: UiData.space;
+        padding-left: UiData.padding;
         alignment: start;
         Text {
         text: "新番日历-数据源长门有C";
-        font-size: UiData.default-font-size-big;
+        font-size: UiData.font-size-big;
         vertical-alignment: center;
         }
         Button {
@@ -21,7 +22,7 @@ export component Anime inherits VerticalLayout {
         }
         Text {
             text: AnimeData.anime-schedule.year + "年" + AnimeData.anime-schedule.month + "月番";
-            font-size: UiData.default-font-size-big;
+            font-size: UiData.font-size-big;
             vertical-alignment: center;
         }
         Button {
@@ -36,12 +37,13 @@ export component Anime inherits VerticalLayout {
             spacing: UiData.space;
             Rectangle {
                 background: UiData.primary-color;
+                border-radius: UiData.border-radius;
                 height: UiData.anime-list-title-height;
                 width: 100%;
                 Text {
                     text: day-anime.text;
                     horizontal-alignment: center;
-                    font-size: UiData.default-font-size-big;
+                    font-size: UiData.font-size-big;
                     color: UiData.secondry-text-color;
                 }
             }
@@ -49,10 +51,16 @@ export component Anime inherits VerticalLayout {
             HorizontalLayout {
                 spacing: UiData.space;
                 for anime in day-anime.anime-list: VerticalLayout {
-                    Image {
-                        source: anime.cover;
+                    Rectangle {
                         width: 120px;
                         height: 150px;
+                        border-radius: UiData.border-radius;
+                        clip: true;
+                        Image {
+                        source: anime.cover;
+                        width: 100%;
+                        height: 100%;
+                    }
                     }
 
                     Text {

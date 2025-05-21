@@ -1,7 +1,7 @@
 use chrono::{NaiveDate, Datelike, Days, Local};
 use slint::{ComponentHandle, ModelRc, Weak};
 use std::{rc::Rc, sync::LazyLock};
-use crate::{AppWindow, TodoData, };
+use crate::{AppWindow, Date, TodoData };
 
 pub const CURRENT_DATE: LazyLock<NaiveDate> = LazyLock::new(|| {
     Local::now().date_naive()
@@ -12,6 +12,8 @@ pub fn init_calendar(app: Weak<AppWindow>) {
     let current_date = get_month_calendar(*CURRENT_DATE);
     let model = change_vec_to_model(current_date);
     todo_data.set_calendar(model);
+    // 顺便初始化当前日期
+    todo_data.set_current_date(get_current_date());
 }
 
 fn get_month_calendar(date: NaiveDate) -> Vec<Vec<i32>> {
@@ -76,4 +78,13 @@ mod tests {
         println!("{}: {:?}", days[i], week);
     }
 }
+}
+
+fn get_current_date() -> Date {
+    let date = *CURRENT_DATE;
+    Date {
+        year: date.year(),
+        month: date.month() as i32,
+        day: date.day() as i32,
+    }
 }

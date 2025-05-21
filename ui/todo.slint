@@ -13,7 +13,7 @@ component TodoCard inherits Rectangle {
     width: 75px;
     height: 100px;
     background: UiData.primary-color;
-    border-radius: 10px;
+    border-radius: UiData.border-radius;
     VerticalLayout {
         height: 100%;
         width: 100%;
@@ -175,8 +175,9 @@ export component Todo inherits HorizontalLayout {
                 text: "上一个月";
             }
             Text {
-                text: "2020年09月";
+                text: TodoData.current-date.year + "年" + TodoData.current-date.month + "月";
                 vertical-alignment: center;
+                font-size: UiData.font-size-big;
             }
             Button {
                 text: "下一个月";
