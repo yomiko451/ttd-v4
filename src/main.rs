@@ -5,7 +5,7 @@ mod logic;
 fn main() -> Result<(), slint::PlatformError> {
     let app = AppWindow::new()?;
     let weak = app.as_weak();
-    logic::init();
-    logic::anime_logic(weak);
+    logic::init(weak.clone());
+    logic::set_anime_logic(weak);
     app.run()
 }

@@ -1,21 +1,48 @@
-use crate::{Anime, AnimeData, AppWindow, DayAnime};
 use crate::logic::APP_PATH;
+use crate::{Anime, AnimeData, AppWindow, Date, DayAnime};
+use chrono::{Datelike, Local, NaiveDate};
 use reqwest::Client;
 use scraper::{Html, Selector};
 use slint::{
-    ComponentHandle, Image, Model, Rgba8Pixel, SharedPixelBuffer, Weak,
-    invoke_from_event_loop,
+    ComponentHandle, Image, Model, Rgba8Pixel, SharedPixelBuffer, Weak, invoke_from_event_loop,
 };
-use std::{io::Write, rc::Rc};
+use std::{io::Write, rc::Rc, sync::LazyLock};
 use tokio::runtime::Runtime;
 
-const BASE_URL: &str = "https://yuc.wiki/202501";
+const BASE_URL: &str = "https://yuc.wiki/";
+const CURRENT_DATE: LazyLock<NaiveDate> = LazyLock::new(|| {
+    Local::now().date_naive()
+});
 
-pub fn anime_logic(app: Weak<AppWindow>) {
+pub fn set_anime_logic(app_weak: Weak<AppWindow>) {
+    let app = app_weak.unwrap();
+    let anime_data = app.global::<AnimeData>();
+    let weak = app_weak.clone();
+    anime_data.on_previous_schedule(move || {
+        let app = weak.clone().unwrap();
+        let anime_data = app.global::<AnimeData>();
+        let anime_schedule = anime_data.get_anime_schedule();
+        let previous_date = previous_schedule(anime_schedule);
+        anime_data.set_anime_schedule(previous_date.clone());
+        //get_anime(app.as_weak(), previous_date); //TODO: 这里需要重新获取数据
+    });
+    let weak = app_weak.clone();
+    anime_data.on_next_schedule(move || {
+        let app = weak.clone().unwrap();
+        let anime_data = app.global::<AnimeData>();
+        let anime_schedule = anime_data.get_anime_schedule();
+        let next_date = next_schedule(anime_schedule);
+        anime_data.set_anime_schedule(next_date.clone());
+        //get_anime(app.as_weak(), next_date); //TODO: 这里需要重新获取数据
+    });
+}
+
+pub fn get_anime(app_weak: Weak<AppWindow>, anime_schedule: Date) {
+    let suffix = get_suffix(anime_schedule);
     std::thread::spawn(move || {
-        let list = parse_html(BASE_URL);
+        let list = parse_html(suffix);
         invoke_from_event_loop(move || {
-            let app = app.unwrap();
+            let app = app_weak.unwrap();
             let mut week_anime_list = app
                 .global::<AnimeData>()
                 .get_week_anime_list()
@@ -27,7 +54,7 @@ pub fn anime_logic(app: Weak<AppWindow>) {
                     .into_iter()
                     .map(|(n, img)| Anime {
                         name: n.into(),
-                        cover: Image::from_rgba8(img.unwrap()),//TODO: 这里需要处理图片加载失败的情况
+                        cover: Image::from_rgba8(img.unwrap()), //TODO: 这里需要处理图片加载失败的情况
                     })
                     .collect::<Vec<Anime>>();
                 week_anime_list[i].anime_list = Rc::new(slint::VecModel::from(list)).into();
@@ -40,8 +67,9 @@ pub fn anime_logic(app: Weak<AppWindow>) {
     });
 }
 
-fn parse_html(url: &str) -> Vec<Vec<(String, Option<SharedPixelBuffer<Rgba8Pixel>>)>> {
-    let anime_data_path = APP_PATH.join("data").join("anime.json");
+fn parse_html(suffix: String) -> Vec<Vec<(String, Option<SharedPixelBuffer<Rgba8Pixel>>)>> {
+    let anime_data_path = APP_PATH.join("data").join(format!("{}.json", suffix));
+    let url = format!("{}{}", BASE_URL, suffix);
     if anime_data_path.exists() {
         let list: Vec<Vec<String>> =
             serde_json::from_reader(std::fs::File::open(&anime_data_path).unwrap()).unwrap();
@@ -49,9 +77,7 @@ fn parse_html(url: &str) -> Vec<Vec<(String, Option<SharedPixelBuffer<Rgba8Pixel
             .into_iter()
             .map(|n| {
                 n.into_iter()
-                    .map(|n| {
-                        (n.clone(), load_img_from_path(&n))
-                    })
+                    .map(|n| (n.clone(), load_img_from_path(&n)))
                     .collect::<Vec<(String, Option<SharedPixelBuffer<Rgba8Pixel>>)>>()
             })
             .collect();
@@ -84,31 +110,26 @@ fn parse_html(url: &str) -> Vec<Vec<(String, Option<SharedPixelBuffer<Rgba8Pixel
                 .select(&cover_selector)
                 .map(|ce| ce.value().attr("data-src").unwrap_or("").to_string())
                 .collect::<Vec<String>>();
-            let anime_list = names.clone()
+            let anime_list = names
+                .clone()
                 .into_iter()
                 .zip(covers.into_iter())
-                .map(|(n, c)| {
-                    
-                    
-                    (n, c)
-                })
+                .map(|(n, c)| (n, c))
                 .collect::<Vec<(String, String)>>();
             name_list.push(names);
             week_anime_list.push(anime_list);
         });
-    Runtime::new()
-        .unwrap()
-        .block_on(async {
-            for names in week_anime_list {
-                for (n, c) in names {
-                    let handle = tokio::spawn(get_cover(c, n, client.clone()));
-                    handles.push(handle);
-                }
+    Runtime::new().unwrap().block_on(async {
+        for names in week_anime_list {
+            for (n, c) in names {
+                let handle = tokio::spawn(get_cover(c, n, client.clone()));
+                handles.push(handle);
             }
-            for handle in handles {
-                let _ = handle.await;
-            }
-        });
+        }
+        for handle in handles {
+            let _ = handle.await;
+        }
+    });
     serde_json::to_writer_pretty(std::fs::File::create(&anime_data_path).unwrap(), &name_list)
         .unwrap();
     let mut result = vec![];
@@ -127,11 +148,10 @@ async fn get_cover(cover: String, name: String, client: Client) {
     let path = save_path.join(name).with_extension("jpg");
     if !path.exists() {
         let response = client.get(cover).send().await.unwrap();
-    let bytes = response.bytes().await.unwrap();
-    let mut file = std::fs::File::create(&path).unwrap();
-    file.write_all(&bytes).unwrap();
+        let bytes = response.bytes().await.unwrap();
+        let mut file = std::fs::File::create(&path).unwrap();
+        file.write_all(&bytes).unwrap();
     }
-    
 }
 
 //确保字符串符合文件名的要求，如果不符合要求，则加以修改
@@ -151,6 +171,57 @@ fn get_valid_filename(name: &str) -> String {
 fn load_img_from_path(name: &str) -> Option<SharedPixelBuffer<Rgba8Pixel>> {
     let path = APP_PATH.join("covers").join(name).with_extension("jpg");
     let img = image::open(&path).unwrap().into_rgba8();
-    let buffer = SharedPixelBuffer::<Rgba8Pixel>::clone_from_slice(img.as_raw(), img.width(), img.height());
+    let buffer =
+        SharedPixelBuffer::<Rgba8Pixel>::clone_from_slice(img.as_raw(), img.width(), img.height());
     Some(buffer)
+}
+
+fn get_suffix(date: Date) -> String {
+    let suffix = match date.month {
+        10 => format!("{}{}", date.year, date.month),
+        _ => format!("{}0{}", date.year, date.month),
+    };
+    suffix.into()
+}
+
+pub fn init_anime_schedule(app: Weak<AppWindow>) -> Date {
+    let app = app.unwrap();
+    let date = chrono::Local::now().date_naive();
+    let mut anime_schedule = app.global::<AnimeData>().get_anime_schedule();
+    anime_schedule.year = date.year();
+    anime_schedule.month = match date.month() {
+        1..=3 => 1,
+        4..=6 => 4,
+        7..=9 => 7,
+        10..=12 => 10,
+        _ => {
+            panic!("Invalid month")
+        } //TODO: 错误处理
+    };
+    app.global::<AnimeData>()
+        .set_anime_schedule(anime_schedule.clone());
+    anime_schedule
+}
+
+
+fn next_schedule(mut date: Date) -> Date {
+    let old_date = date.clone();
+    date.month += 3;
+    if date.month > 12 {
+        date.month = 1;
+        date.year += 1;
+    }
+    if date.year > CURRENT_DATE.year() as i32 || (date.year == CURRENT_DATE.year() as i32 && date.month >= CURRENT_DATE.month() as i32) {
+        return old_date;
+    }
+    date
+}
+
+fn previous_schedule(mut date: Date) -> Date {
+    date.month -= 3;
+    if date.month < 1 {
+        date.month = 10;
+        date.year -= 1;
+    }
+    date
 }

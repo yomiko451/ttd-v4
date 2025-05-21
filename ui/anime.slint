@@ -1,16 +1,33 @@
 import {UiData, DayAnime, AnimeData} from "global.slint";
 
-import { TabWidget, StandardTableView, GroupBox, ScrollView, ListView } from "std-widgets.slint";
+import { TabWidget, StandardTableView, GroupBox, ScrollView, ListView, Button } from "std-widgets.slint";
 export component Anime inherits VerticalLayout {
     width: 100%;
     padding-top: UiData.tab-padding-top-bottom;
     padding-bottom: UiData.tab-padding-top-bottom;
     padding-left: UiData.tab-padding-left-right;
     padding-right: UiData.tab-padding-left-right;
-    spacing: UiData.big-space; //TODO: 这个spacing还要不要
-    Text {
+    HorizontalLayout {
+        spacing: UiData.space;
+        alignment: start;
+        Text {
         text: "新番日历-数据源长门有C";
         font-size: UiData.default-font-size-big;
+        vertical-alignment: center;
+        }
+        Button {
+            text: "上一季度";
+            clicked => { AnimeData.previous_schedule();}
+        }
+        Text {
+            text: AnimeData.anime-schedule.year + "年" + AnimeData.anime-schedule.month + "月番";
+            font-size: UiData.default-font-size-big;
+            vertical-alignment: center;
+        }
+        Button {
+            text: "下一季度";
+            clicked => { AnimeData.next_schedule();}
+        }
     }
 
     ListView {

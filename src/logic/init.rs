@@ -1,8 +1,7 @@
-
+use crate::AppWindow;
+use slint::Weak;
 use std::path::PathBuf;
 use std::sync::LazyLock;
-
-
 
 pub const APP_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
     let path = std::env::var("APPDATA").unwrap();
@@ -13,8 +12,10 @@ pub const APP_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
     app_path
 });
 
-pub fn init() {
+pub fn init(app: Weak<AppWindow>) {
     check_data_dir();
+    let anime_schedule = crate::logic::init_anime_schedule(app.clone());
+    crate::logic::get_anime(app, anime_schedule);
 }
 
 fn check_data_dir() {

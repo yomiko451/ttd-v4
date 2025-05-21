@@ -37,7 +37,10 @@ export struct DayAnime {
 }
 
 export global AnimeData {
-    callback get-anime-data;
+    callback next_schedule;
+    callback previous_schedule;
+    callback get-anime-data;// TODO:  add implementation
+    in-out property <Date> anime-schedule;
     in-out property <[DayAnime]> week-anime-list: [
         {day: Weekday.Monday, text: "周一（月）", anime-list: []},
         {day: Weekday.Tuesday, text: "周二（火）", anime-list: []},
@@ -84,4 +87,6 @@ export global UiData {
 export global TodoData {
     in-out property <[Todo]> todo-list;
 }
+
+
 
