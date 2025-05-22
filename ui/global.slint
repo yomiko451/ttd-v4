@@ -11,7 +11,7 @@ export enum Tab {
 }
 
 
-struct Anime {
+export struct Anime {
     name: string,
     cover: image,
 }
@@ -21,6 +21,8 @@ export struct DayAnime {
     anime-list: [Anime]
 }
 
+
+@rust-attr(derive(serde::Serialize, serde::Deserialize))
 struct Todo {
     text: string,
     created-at: string,
@@ -31,9 +33,8 @@ struct Todo {
     current_progress: int,
     max_progress: int,
     deadline: Date,
-    type: int,
-    days_left: int,
-    days_to_next: int,
+    kind: int,
+    days_to_start: int,
 }
 
 
@@ -60,7 +61,8 @@ export global UiData {
     in-out property <length> avatar-size-big: 120px;
     in-out property <color> primary-color: #88C9A1;//rgb(237, 239, 239);
     in-out property <color> menu-button-clicked-color: #5BB48B;//rgb(221, 221, 221);
-    
+    in-out property <length> cover-width: 120px;
+    in-out property <length> cover-height: 150px;
     in-out property <color> primary-text-color: #303133;
     in-out property <color> secondry-text-color: #FFFFFF;
     in-out property <length> default-font-size: 14px;
@@ -71,8 +73,9 @@ export global UiData {
     in-out property <length> spinbox-width: 110px;
     in-out property <length> combobox-width: 100px;
     in-out property <length> space: 5px;
-    in-out property <length> big-space: 15px;
+    in-out property <length> space-big: 15px;
     in-out property <length> padding: 5px;
+    //in-out property <length> padding-big: 10px;
     in-out property <length> border-radius-big: 10px;
     in-out property <length> border-radius: 5px;
     in-out property <length> menu-button-height: 40px;
@@ -101,14 +104,13 @@ export global TodoData {
         created-at: "",
         recurrence: false,
         week: 0,
-        day: 0,
+        day: 1,
         once: UiData.default-date,
         current_progress: 50,
         max_progress: 100,
         deadline: UiData.default-date,
-        type: 0,
-        days_left: 0,
-        days_to_next: 0
+        kind: 0,
+        days_to_start: 0
     };
 }
 

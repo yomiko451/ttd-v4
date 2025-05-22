@@ -1,4 +1,4 @@
-import {UiData, DayAnime, AnimeData, TodoData} from "global.slint";
+import {UiData, DayAnime, AnimeData, TodoData, Anime} from "global.slint";
 
 import { TabWidget, StandardTableView, GroupBox, ScrollView, ListView, Button } from "std-widgets.slint";
 export component Anime inherits VerticalLayout {
@@ -52,6 +52,9 @@ export component Anime inherits VerticalLayout {
 
     ListView {
         for day-anime in AnimeData.week-anime-list: VerticalLayout {
+            in-out property <int> img-col: floor((self.width - (UiData.padding * 2 + UiData.space)) / (UiData.cover-width + UiData.space)); 
+            in-out property <int> img-row: floor(day-anime.anime-list.length / img-col);
+            in-out property <int> remainder: mod(day-anime.anime-list.length, img-col);
             padding: UiData.padding;
             spacing: UiData.space;
             Rectangle {
@@ -67,12 +70,38 @@ export component Anime inherits VerticalLayout {
                 }
             }
 
-            HorizontalLayout {
+            for i in img-row: HorizontalLayout {
                 spacing: UiData.space;
-                for anime in day-anime.anime-list: VerticalLayout {
+                for j in img-col: VerticalLayout {
+                    in-out property <Anime> anime: day-anime.anime-list[i * img-col + j];
                     Rectangle {
                         width: 120px;
                         height: 150px;
+                        border-radius: UiData.border-radius;
+                        clip: true;
+                        Image {
+                        source: anime.cover;
+                        width: 100%;
+                        height: 100%;
+                    }
+                    }
+
+                    Text {
+                        width: 120px;
+                        text: anime.name;
+                        wrap: word-wrap;
+                        horizontal-alignment: center;
+                    }
+                }
+            }
+            // 处理最后一行剩余的图片
+            HorizontalLayout {
+                spacing: UiData.space;
+                for i in remainder: VerticalLayout {
+                    in-out property <Anime> anime: day-anime.anime-list[img-row * img-col + i];
+                    Rectangle {
+                        width: UiData.cover-width;
+                        height: UiData.cover-height;
                         border-radius: UiData.border-radius;
                         clip: true;
                         Image {

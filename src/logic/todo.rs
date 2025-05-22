@@ -1,7 +1,9 @@
 use chrono::{NaiveDate, Datelike, Days, Local};
+use image::imageops::FilterType::CatmullRom;
+use serde::{Deserialize, Serialize};
 use slint::{ComponentHandle, Model, ModelRc, Weak};
 use std::{rc::Rc, sync::LazyLock};
-use crate::{AppWindow, Date, Todo, TodoData };
+use crate::{logic::APP_PATH, AppWindow, Date, Todo, TodoData };
 
 pub const CURRENT_DATE: LazyLock<NaiveDate> = LazyLock::new(|| {
     Local::now().date_naive()
@@ -23,7 +25,9 @@ pub fn set_todo_logic(app: Weak<AppWindow>) {
         let todo_data = app.global::<TodoData>();
         let mut todos = todo_data.get_todo_list().iter().collect::<Vec<Todo>>();
         todo.created_at = get_created_at_string().into();
+        todo.days_to_start = calculate_days_to_start(&todo);
         todos.push(todo);
+        save_todos(&todos);
         todo_data.set_todo_list(Rc::new(slint::VecModel::from(todos)).into());
     });
 }
@@ -100,6 +104,93 @@ fn get_created_at_string() -> String {
     Local::now()
         .format("%Y-%m-%d %H:%M:%S")
         .to_string()
+}
+
+fn calculate_days_to_start(todo: &Todo) -> i32 {
+    match todo.kind {
+        0 => {
+            let date = convert_date_to_naivedate(todo.once.clone());
+            date.signed_duration_since(*CURRENT_DATE).num_days() as i32
+        }
+        1 => 0,
+        2 => {
+            let weekday = todo.week as i32;
+            let current_weekday = CURRENT_DATE.weekday() as i32;
+            if current_weekday > weekday {
+                7 - current_weekday + weekday
+            } else {
+                weekday - current_weekday
+            }
+        }
+        3 => {
+            let day = todo.day;
+                    let mut month = CURRENT_DATE.month();
+                    let day_now = CURRENT_DATE.day() as i32;
+                    if day_now <= day {
+                        day - day_now
+                    } else {
+                        println!("{}", day);
+                        let next_date = loop {
+                            let (y, m) = match month {
+                                12 => (CURRENT_DATE.year() + 1, 1),
+                                m => (CURRENT_DATE.year(), m + 1),
+                            };
+                            let date = NaiveDate::from_ymd_opt(y, m, day as u32);
+                            if date.is_some() {
+                                break date.unwrap();
+                            } else {
+                                month += 1;
+                            }
+                        };
+                        let days = next_date.signed_duration_since(*CURRENT_DATE).num_days();
+                        days as i32
+                    }
+            },
+        _ => 0,
+    }
+}
+
+fn save_todos(todos: &Vec<Todo>) {
+    let path = APP_PATH.join("data").join("todo_lsit.json");
+    let file = std::fs::File::create(path).unwrap();
+    serde_json::to_writer(file, &todos).unwrap();
+}
+
+pub fn load_todos(app: Weak<AppWindow>) {
+    let app = app.unwrap();
+    let path = APP_PATH.join("data").join("todo_lsit.json");
+    if path.exists() {
+        let todos: Vec<Todo> = serde_json::from_reader(std::fs::File::open(path).unwrap()).unwrap();
+        let model = Rc::new(slint::VecModel::from(todos));
+        app.global::<TodoData>().set_todo_list(model.into());
+    }
+}
+
+impl Serialize for Date {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let date_str = format!("{}-{}-{}", self.year, self.month, self.day);
+        serializer.serialize_str(&date_str)
+    }
+}
+
+impl<'de> Deserialize<'de> for Date {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let date_str = String::deserialize(deserializer)?;
+        let parts: Vec<&str> = date_str.split('-').collect();
+        if parts.len() != 3 {
+            return Err(serde::de::Error::custom("Invalid date format"));
+        }
+        let year = parts[0].parse::<i32>().map_err(serde::de::Error::custom)?;
+        let month = parts[1].parse::<i32>().map_err(serde::de::Error::custom)?;
+        let day = parts[2].parse::<i32>().map_err(serde::de::Error::custom)?;
+        Ok(Date { year, month, day })
+    }
 }
 
 #[cfg(test)]

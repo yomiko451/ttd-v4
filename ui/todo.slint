@@ -35,7 +35,7 @@ export component Todo inherits HorizontalLayout {
     padding-bottom: UiData.tab-padding-top-bottom;
     padding-left: UiData.tab-padding-left-right;
     padding-right: UiData.tab-padding-left-right;
-    spacing: UiData.big-space;
+    spacing: UiData.space-big;
     property <[string]> todo-type: ["单次", "每日", "每周", "每月", "进度"];
     property <[string]> weeks: ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
     property <int> day: 1;
@@ -48,7 +48,12 @@ export component Todo inherits HorizontalLayout {
                 width: UiData.combobox-width;
                 model: todo-type;
                 selected(_) => {
-                    TodoData.new-todo.type = self.current-index;
+                    TodoData.new-todo.kind = self.current-index;
+                    if TodoData.new-todo.kind == 0 || TodoData.new-todo.kind == 4 {
+                        TodoData.new-todo.recurrence = false;
+                    } else {
+                        TodoData.new-todo.recurrence = true;
+                    }
                 }
             }
 
@@ -182,13 +187,23 @@ export component Todo inherits HorizontalLayout {
                 padding: UiData.padding;
                 HorizontalLayout {
                     alignment: start;
-                    spacing: UiData.padding;
+                    spacing: UiData.space-big;
                     Text {
-                        text: todo-type[todo.type];
+                        text: todo-type[todo.kind];
+                    }
+                    Text {
+                        text: todo.recurrence ? "重复" : "不重复";
                     }
                     Text {
                         text: todo.created-at;
                     }
+                    if todo.kind != 4: Text {
+                        text: todo.days-to-start == 0 ? "今天" : todo.days-to-start + "天后";
+                    }
+                    if todo.kind == 4: Text {
+                        text: todo.current-progress + "/" + todo.max-progress;
+                    }
+                    
                 }
                 Rectangle {
                     background: UiData.primary-color;
