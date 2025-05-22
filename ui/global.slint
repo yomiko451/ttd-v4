@@ -1,6 +1,13 @@
 import {Date} from "std-widgets.slint";
 
-
+@rust-attr(derive(serde::Serialize, serde::Deserialize))
+export enum TodoKind {
+    Once,
+    Daily,
+    Weekly,
+    Monthly,
+    Progress
+}
 
 export enum Tab {
     Home,
@@ -33,7 +40,7 @@ struct Todo {
     current_progress: int,
     max_progress: int,
     deadline: Date,
-    kind: int,
+    kind: TodoKind,
     days_to_start: int,
 }
 
@@ -65,8 +72,11 @@ export global UiData {
     in-out property <length> cover-height: 150px;
     in-out property <color> primary-text-color: #303133;
     in-out property <color> secondry-text-color: #FFFFFF;
+    in-out property <color> todo-selected-color: #E5E5E5;
+    in-out property <color> warn-text-color: #FF5252; // TODO: 红色要不要
     in-out property <length> default-font-size: 14px;
     in-out property <length> font-size-big: 16px;
+    in-out property <length> font-size-super-big: 18px;
     in-out property <length> tab-padding-top-bottom: 30px;
     in-out property <length> tab-padding-left-right: 15px;
     out property <int> spinbox-max: 10000;
@@ -94,6 +104,32 @@ export global UiData {
 
 
 export global TodoData {
+    public pure function format-todokind(kind: TodoKind) -> string { 
+        if (kind == TodoKind.Once) {
+            return "单次";
+        } else if (kind == TodoKind.Daily) {
+            return "每日";
+        } else if (kind == TodoKind.Weekly) {
+            return "每周";
+        } else if (kind == TodoKind.Monthly) {
+            return "每月";
+        } else {
+            return "进度";
+        }
+    }
+    public function convert-int-to-todokind(index: int) -> TodoKind {
+        if (index == 0) {
+            return TodoKind.Once;
+        } else if (index == 1) {
+            return TodoKind.Daily;
+        } else if (index == 2) {
+            return TodoKind.Weekly;
+        } else if (index == 3) {
+            return TodoKind.Monthly;
+        } else {
+            return TodoKind.Progress;
+        };
+    }
     callback add-todo(todo: Todo);
     callback update-calendar(new-date: Date);
     in-out property <[[Date]]> calendar;
@@ -109,7 +145,7 @@ export global TodoData {
         current_progress: 50,
         max_progress: 100,
         deadline: UiData.default-date,
-        kind: 0,
+        kind: TodoKind.Once,
         days_to_start: 0
     };
 }

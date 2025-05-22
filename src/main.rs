@@ -8,5 +8,8 @@ fn main() -> Result<(), slint::PlatformError> {
     logic::init(weak.clone());
     logic::set_anime_logic(weak.clone());
     logic::set_todo_logic(weak.clone());
+    app.window().on_close_requested(move || {
+        slint::CloseRequestResponse::HideWindow // TODO: 完善关闭逻辑
+    });
     app.run()
 }

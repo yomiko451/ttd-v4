@@ -1,5 +1,5 @@
 use crate::{logic::APP_PATH, logic::CURRENT_DATE};
-use crate::{Anime, AnimeData, AppWindow, Date, DayAnime};
+use crate::{Anime, AnimeData, AppWindow, logic::SlintDate, DayAnime};
 use chrono::{Datelike, Local, NaiveDate};
 use reqwest::Client;
 use scraper::{Html, Selector};
@@ -19,7 +19,7 @@ pub fn set_anime_logic(app_weak: Weak<AppWindow>) {
     //TODO: 
 }
 
-pub fn get_anime(app_weak: Weak<AppWindow>, anime_schedule: Date) {
+pub fn get_anime(app_weak: Weak<AppWindow>, anime_schedule: SlintDate) {
     let suffix = get_suffix(anime_schedule);
     std::thread::spawn(move || {
         let list = parse_html(suffix);
@@ -159,7 +159,7 @@ fn load_img_from_path(name: &str) -> Option<SharedPixelBuffer<Rgba8Pixel>> {
     Some(buffer)
 }
 
-fn get_suffix(date: Date) -> String {
+fn get_suffix(date: SlintDate) -> String {
     let suffix = match date.month {
         10 => format!("{}{}", date.year, date.month),
         _ => format!("{}0{}", date.year, date.month),
@@ -167,7 +167,7 @@ fn get_suffix(date: Date) -> String {
     suffix.into()
 }
 
-pub fn init_anime_schedule(app: Weak<AppWindow>) -> Date {
+pub fn init_anime_schedule(app: Weak<AppWindow>) -> SlintDate {
     let app = app.unwrap();
     let date = chrono::Local::now().date_naive();
     let mut anime_schedule = app.global::<AnimeData>().get_anime_schedule();

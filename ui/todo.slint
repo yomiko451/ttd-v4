@@ -1,6 +1,5 @@
 import {Date, Button, LineEdit, HorizontalBox, CheckBox, ComboBox, VerticalBox, DatePickerPopup, Slider, SpinBox, Spinner, TabWidget, GroupBox, GridBox, ListView, ScrollView} from "std-widgets.slint";
-import {UiData} from "./global.slint";
-import { TodoData } from "global.slint";
+import { TodoData, TodoKind, UiData } from "global.slint";
 
 
 component TodoCard inherits Rectangle {
@@ -19,7 +18,7 @@ component TodoCard inherits Rectangle {
             spacing: UiData.space;
             Text {
                 width: 75%;
-                text: day == 0 ? "": day;
+                text: day == 0 ? "" : day;
                 font-size: 32px;
                 vertical-alignment: center;
                 horizontal-alignment: center;
@@ -27,7 +26,7 @@ component TodoCard inherits Rectangle {
             }
         }
     }
-} 
+}
 
 export component Todo inherits HorizontalLayout {
     width: 100%;
@@ -48,8 +47,8 @@ export component Todo inherits HorizontalLayout {
                 width: UiData.combobox-width;
                 model: todo-type;
                 selected(_) => {
-                    TodoData.new-todo.kind = self.current-index;
-                    if TodoData.new-todo.kind == 0 || TodoData.new-todo.kind == 4 {
+                    TodoData.new-todo.kind = TodoData.convert-int-to-todokind(self.current-index);
+                    if TodoData.new-todo.kind == TodoKind.Once || TodoData.new-todo.kind == TodoKind.Progress {
                         TodoData.new-todo.recurrence = false;
                     } else {
                         TodoData.new-todo.recurrence = true;
@@ -60,13 +59,14 @@ export component Todo inherits HorizontalLayout {
             date-picker-once := DatePickerPopup {
                 close-policy: PopupClosePolicy.close-on-click-outside;
                 accepted(date) => {
-                    TodoData.new-todo.once = date; // TODO: 这里有点复杂多想想
+                    TodoData.new-todo.once = date;
                     self.close();
                 }
                 canceled => {
                     self.close();
                 }
             }
+
             date-picker := DatePickerPopup {
                 close-policy: PopupClosePolicy.close-on-click-outside;
                 accepted(date) => {
@@ -169,7 +169,7 @@ export component Todo inherits HorizontalLayout {
                     self.text = "";
                     TodoData.add-todo(TodoData.new-todo);
                 }
-             }
+            }
 
             Button {
                 text: "添加待办";
@@ -179,51 +179,151 @@ export component Todo inherits HorizontalLayout {
                     TodoData.add-todo(TodoData.new-todo);
                 }
             }
-            
+        }
+        Rectangle {
+            background: UiData.primary-color;
+            border-radius: UiData.border-radius;
+            HorizontalLayout {
+            spacing: UiData.space;
+            padding-left: UiData.tab-padding-left-right; 
+            padding-right: UiData.tab-padding-left-right;
+            padding-top: UiData.padding;
+            padding-bottom: UiData.padding;
+            Text {
+                color: UiData.secondry-text-color;
+                font-size: UiData.font-size-super-big;
+                vertical-alignment: center;
+                text: "全部";
+                TouchArea {
+                    clicked => {
+                        parent.text = "lalala"
+                    }
+                }
+            }
+            Text {
+                color: UiData.secondry-text-color;
+                font-size: UiData.font-size-super-big;
+                vertical-alignment: center;
+                text: "每周";
+                TouchArea {
+                    clicked => {
+                        parent.text = "lalala"
+                    }
+                }
+            }
+            Text {
+                color: UiData.secondry-text-color;
+                font-size: UiData.font-size-super-big;
+                vertical-alignment: center;
+                text: "每日";
+                TouchArea {
+                    clicked => {
+                        parent.text = "lalala"
+                    }
+                }
+            }
+            Text {
+                color: UiData.secondry-text-color;
+                font-size: UiData.font-size-super-big;
+                vertical-alignment: center;
+                text: "每月";
+                TouchArea {
+                    clicked => {
+                        parent.text = "lalala"
+                    }
+                }
+            }
+            Text {
+                color: UiData.secondry-text-color;
+                font-size: UiData.font-size-super-big;
+                vertical-alignment: center;
+                text: "进度";
+                TouchArea {
+                    clicked => {
+                        parent.text = "lalala"
+                    }
+                }
+            }
+            Text {
+                color: UiData.secondry-text-color;
+                font-size: UiData.font-size-super-big;
+                horizontal-stretch: 1;
+                horizontal-alignment: right;
+                vertical-alignment: center;
+                text: "3 /" + TodoData.todo-list.length;
+            }
+        }
         }
         ListView {
-            for todo in TodoData.todo-list: VerticalLayout {
-                spacing: UiData.padding;
-                padding: UiData.padding;
-                HorizontalLayout {
-                    alignment: start;
-                    spacing: UiData.space-big;
-                    Text {
-                        text: todo-type[todo.kind];
+            in-out property <int> selected-todo: -1;
+            for todo[i] in TodoData.todo-list: Rectangle {
+                border-radius: UiData.border-radius;
+                TouchArea {
+                    clicked => {
+                        selected-todo = i;
                     }
-                    Text {
-                        text: todo.recurrence ? "重复" : "不重复";
-                    }
-                    Text {
-                        text: todo.created-at;
-                    }
-                    if todo.kind != 4: Text {
-                        text: todo.days-to-start == 0 ? "今天" : todo.days-to-start + "天后";
-                    }
-                    if todo.kind == 4: Text {
-                        text: todo.current-progress + "/" + todo.max-progress;
-                    }
-                    
                 }
-                Rectangle {
-                    background: UiData.primary-color;
-                    border-radius: UiData.border-radius;
+                states [
+                    active when selected-todo == i: {
+                        background: UiData.todo-selected-color;
+                    }
+                ]
+                animate background {
+                     duration: 0.2s;
+                     easing: ease-in-out;
+                }
+
+                VerticalLayout {
+                    if selected-todo == i: HorizontalLayout {
+                            alignment: start;
+                            spacing: UiData.space;
+                            Button {
+                                text: "编辑";
+                            }
+                            Button {
+                                text: "删除";
+                            }
+                            Button {
+                                text: "完成";
+                            }
+                        }
+                    padding: UiData.padding;
+                    spacing: UiData.padding;
+                    HorizontalLayout {
+                        alignment: start;
+                        spacing: UiData.space-big;
+                        
+                        Text {
+                            
+                            text: TodoData.format-todokind(todo.kind);
+                        }
+                        Text {
+                            
+                            text: todo.created-at;
+                        }
+                        if todo.kind != TodoKind.Progress: Text {
+                            
+                            text: todo.days-to-start == 0 ? "今天" : todo.days-to-start + "天后";
+                        }
+                        if todo.kind == TodoKind.Progress: Text {
+                            
+                            text: "已完成" + todo.current-progress + "/" + todo.max-progress;
+                        }
+                    }
                     HorizontalLayout {
                         padding-left: UiData.padding;
                         padding-right: UiData.padding;
                         Text {
-                        horizontal-stretch: 1;
-                        text: todo.text;
-                        wrap: word-wrap;
-                        font-size: UiData.font-size-big;
-                        color: UiData.secondry-text-color;
-                    }
+                            
+                            horizontal-stretch: 1;
+                            text: todo.text;
+                            wrap: word-wrap;
+                            font-size: UiData.font-size-super-big;
+                        }
                     }
                 }
-                    
             }
         }
-        
     }
 
     VerticalLayout {
@@ -239,15 +339,17 @@ export component Todo inherits HorizontalLayout {
                         TodoData.current-date.year -= 1;
                     } else {
                         TodoData.current-date.month -= 1;
-                    };
+                    }
                     TodoData.update-calendar(TodoData.current-date);
                 }
             }
+
             Text {
                 text: TodoData.current-date.year + "年" + TodoData.current-date.month + "月";
                 vertical-alignment: center;
                 font-size: UiData.font-size-big;
             }
+
             Button {
                 text: "下一个月";
                 clicked => {
@@ -256,26 +358,23 @@ export component Todo inherits HorizontalLayout {
                         TodoData.current-date.year += 1;
                     } else {
                         TodoData.current-date.month += 1;
-                    };
+                    }
                     TodoData.update-calendar(TodoData.current-date);
                 }
             }
-            
         }
-        
+
         HorizontalLayout {
             alignment: center;
             spacing: UiData.space;
             height: 95%;
-                for weeks in TodoData.calendar: VerticalLayout {
-                    alignment: center;
-                    spacing: UiData.space;
-                    for date in weeks: TodoCard {
-                        day: date.day;
-                    }
-                } 
+            for weeks in TodoData.calendar: VerticalLayout {
+                alignment: center;
+                spacing: UiData.space;
+                for date in weeks: TodoCard {
+                    day: date.day;
+                }
+            }
         }
-        
     }
 }
-
