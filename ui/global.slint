@@ -1,11 +1,6 @@
 import {Date} from "std-widgets.slint";
 
-struct Todo {
-    text: string,
-    created-at: string,
-    type: string,
-    rank: string
-}
+
 
 export enum Tab {
     Home,
@@ -14,16 +9,7 @@ export enum Tab {
     News,
     Stats
 }
-@rust-attr(derive(Eq, Hash, serde::Serialize, serde::Deserialize))
-enum Weekday {
-    Monday,
-    Tuesday,
-    Wednesday,
-    Thursday,
-    Friday,
-    Saturday,
-    Sunday
-}
+
 
 struct Anime {
     name: string,
@@ -31,23 +17,38 @@ struct Anime {
 }
 
 export struct DayAnime {
-    day: Weekday,
     text: string,
     anime-list: [Anime]
 }
+
+struct Todo {
+    text: string,
+    created-at: string,
+    recurrence: bool,
+    week: int,
+    day: int,
+    once: Date,
+    current_progress: int,
+    max_progress: int,
+    deadline: Date,
+    type: int,
+    days_left: int,
+    days_to_next: int,
+}
+
 
 export global AnimeData {
     callback update-anime-data;// TODO:  add implementation
     in-out property <bool> is-loading: true;
     in-out property <Date> anime-schedule;
     in-out property <[DayAnime]> week-anime-list: [
-        {day: Weekday.Monday, text: "周一（月）", anime-list: []},
-        {day: Weekday.Tuesday, text: "周二（火）", anime-list: []},
-        {day: Weekday.Wednesday, text: "周三（水）", anime-list: []},
-        {day: Weekday.Thursday, text: "周四（木）", anime-list: []},
-        {day: Weekday.Friday, text: "周五（金）", anime-list: []},
-        {day: Weekday.Saturday, text: "周六（土）", anime-list: []},
-        {day: Weekday.Sunday, text: "周日（日）", anime-list: []}
+        {text: "周一（月）", anime-list: []},
+        {text: "周二（火）", anime-list: []},
+        {text: "周三（水）", anime-list: []},
+        {text: "周四（木）", anime-list: []},
+        {text: "周五（金）", anime-list: []},
+        {text: "周六（土）", anime-list: []},
+        {text: "周日（日）", anime-list: []}
     ];
     
 }
@@ -74,7 +75,7 @@ export global UiData {
     in-out property <length> padding: 5px;
     in-out property <length> border-radius-big: 10px;
     in-out property <length> border-radius: 5px;
-    in-out property <length> menu-button-height: 50px;
+    in-out property <length> menu-button-height: 40px;
     in-out property <length> menu-button-font-size: 18px;
 
     in-out property <length> anime-list-title-height: 30px;
@@ -90,10 +91,25 @@ export global UiData {
 
 
 export global TodoData {
-    callback update-calendar;
-    in-out property <[[int]]> calendar;
+    callback add-todo(todo: Todo);
+    callback update-calendar(new-date: Date);
+    in-out property <[[Date]]> calendar;
     in-out property <Date> current-date;
     in-out property <[Todo]> todo-list;
+    in-out property <Todo> new-todo: {
+        text: "",
+        created-at: "",
+        recurrence: false,
+        week: 0,
+        day: 0,
+        once: UiData.default-date,
+        current_progress: 50,
+        max_progress: 100,
+        deadline: UiData.default-date,
+        type: 0,
+        days_left: 0,
+        days_to_next: 0
+    };
 }
 
 

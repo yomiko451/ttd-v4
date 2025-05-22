@@ -1,7 +1,7 @@
 use chrono::{NaiveDate, Datelike, Days, Local};
-use slint::{ComponentHandle, ModelRc, Weak};
+use slint::{ComponentHandle, Model, ModelRc, Weak};
 use std::{rc::Rc, sync::LazyLock};
-use crate::{AppWindow, Date, TodoData };
+use crate::{AppWindow, Date, Todo, TodoData };
 
 pub const CURRENT_DATE: LazyLock<NaiveDate> = LazyLock::new(|| {
     Local::now().date_naive()
@@ -11,13 +11,20 @@ pub fn set_todo_logic(app: Weak<AppWindow>) {
     let app = app.unwrap();
     let todo_data = app.global::<TodoData>();
     let weak = app.as_weak();
-    todo_data.on_update_calendar(move || {
+    todo_data.on_update_calendar(move |new_date: Date| {
         let app = weak.unwrap();
-        let todo_data = app.global::<TodoData>();
-        let new_date = todo_data.get_current_date();
         let new_calendar = get_month_calendar(convert_date_to_naivedate(new_date));
         let model = convert_vec_to_model(new_calendar);
-        todo_data.set_calendar(model);
+        app.global::<TodoData>().set_calendar(model);
+    });
+    let weak = app.as_weak();
+    todo_data.on_add_todo(move |mut todo: Todo| {
+        let app = weak.unwrap();
+        let todo_data = app.global::<TodoData>();
+        let mut todos = todo_data.get_todo_list().iter().collect::<Vec<Todo>>();
+        todo.created_at = get_created_at_string().into();
+        todos.push(todo);
+        todo_data.set_todo_list(Rc::new(slint::VecModel::from(todos)).into());
     });
 }
 
@@ -31,17 +38,17 @@ pub fn init_calendar(app: Weak<AppWindow>) {
     todo_data.set_current_date(get_current_date());
 }
 
-fn get_month_calendar(date: NaiveDate) -> Vec<Vec<i32>> {
+fn get_month_calendar(date: NaiveDate) -> Vec<Vec<Date>> {
     let (year, month) = (date.year(), date.month());
     // 创建7个数组对应周一到周日
-    let mut weekdays: Vec<Vec<i32>> = vec![Vec::new(); 7];
+    let mut weekdays: Vec<Vec<Date>> = vec![Vec::new(); 7];
     
     // 获取该月第一天
     let start_date = NaiveDate::from_ymd_opt(year, month, 1).unwrap();
     
     // 根据第一天星期几补0
     for i in 0..start_date.weekday().num_days_from_monday() {
-        weekdays[i as usize].push(0);
+        weekdays[i as usize].push(Date::default());
     }
 
     // 获取下个月第一天
@@ -56,7 +63,11 @@ fn get_month_calendar(date: NaiveDate) -> Vec<Vec<i32>> {
     while current_date < next_month {
         // weekday()返回0-6，其中0是周一
         let weekday = current_date.weekday().num_days_from_monday() as usize;
-        weekdays[weekday].push(current_date.day() as i32);
+        weekdays[weekday].push(Date {
+            year,
+            month: month as i32,
+            day: current_date.day() as i32,
+        });
         
         // 前进一天
         current_date = current_date.checked_add_days(Days::new(1)).unwrap();
@@ -65,17 +76,17 @@ fn get_month_calendar(date: NaiveDate) -> Vec<Vec<i32>> {
     // 长度不足6的补0
     for weeks in weekdays.iter_mut() {
         while weeks.len() < 6 {
-            weeks.push(0);
+            weeks.push(Date::default());
         }
     }
 
     weekdays
 }
 
-fn convert_vec_to_model(vec: Vec<Vec<i32>>) -> ModelRc<ModelRc<i32>> {
+fn convert_vec_to_model(vec: Vec<Vec<Date>>) -> ModelRc<ModelRc<Date>> {
     let mut model = vec![];
     for i in vec {
-        let m: ModelRc<i32> = Rc::new(slint::VecModel::from(i)).into();
+        let m: ModelRc<Date> = Rc::new(slint::VecModel::from(i)).into();
         model.push(m);
     };
     Rc::new(slint::VecModel::from(model)).into()
@@ -83,6 +94,12 @@ fn convert_vec_to_model(vec: Vec<Vec<i32>>) -> ModelRc<ModelRc<i32>> {
 
 fn convert_date_to_naivedate(date: Date) -> NaiveDate {
     NaiveDate::from_ymd_opt(date.year, date.month as u32, date.day as u32).unwrap()
+}
+
+fn get_created_at_string() -> String {
+    Local::now()
+        .format("%Y-%m-%d %H:%M:%S")
+        .to_string()
 }
 
 #[cfg(test)]
