@@ -4,6 +4,7 @@ import "./assets/font/LXGWWenKaiGBScreen.ttf";
 import { Menu } from "menu.slint";
 import { Anime } from "anime.slint";
 import { UiData, Tab, AnimeData, TodoData } from "global.slint";
+import { About } from "about.slint";
 
 export { AnimeData, TodoData }
 
@@ -26,6 +27,7 @@ export component AppWindow inherits Window {
             height: 100%;
             if UiData.current-tab == Tab.Todo: Todo {}
             if UiData.current-tab == Tab.Anime: Anime {}
+            if UiData.current-tab == Tab.About: About {}
         }
     }
 }

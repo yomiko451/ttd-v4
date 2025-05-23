@@ -38,7 +38,8 @@ export component Menu inherits VerticalLayout {
         alignment: start;
         spacing: UiData.space;
         vertical-stretch: 1;
-        padding: UiData.tab-padding-left-right;
+        padding-left: UiData.tab-padding-left-right;
+        padding-right: UiData.tab-padding-left-right;
         Rectangle {
             border-radius: UiData.border-radius;
             height: UiData.menu-button-height;
@@ -177,14 +178,59 @@ export component Menu inherits VerticalLayout {
 
     VerticalLayout {
         width: 100%;
+        padding-left: UiData.tab-padding-left-right;
+        padding-right: UiData.tab-padding-left-right;
         padding-bottom: UiData.tab-padding-top-bottom;
         Rectangle {
+            border-radius: UiData.border-radius;
+            height: UiData.menu-button-height;
+            width: 100%;
+            Text {
+                text: "设置";
+                font-size: UiData.menu-button-font-size;
+                color: UiData.secondry-text-color;
+            }
+
+            TouchArea {
+                clicked => {
+                    UiData.current-tab = Tab.Setting;
+                }
+            }
+
+            states [
+                active when UiData.current-tab == Tab.Setting: {
+                    background: UiData.menu-button-clicked-color;
+                }
+            ]
+            animate background {
+                duration: 0.2s;
+                easing: ease-in-out;
+            }
+        }
+        Rectangle {
+            border-radius: UiData.border-radius;
             height: UiData.menu-button-height;
             width: 100%;
             Text {
                 text: "关于";
                 font-size: UiData.menu-button-font-size;
                 color: UiData.secondry-text-color;
+            }
+
+            TouchArea {
+                clicked => {
+                    UiData.current-tab = Tab.About;
+                }
+            }
+
+            states [
+                active when UiData.current-tab == Tab.About: {
+                    background: UiData.menu-button-clicked-color;
+                }
+            ]
+            animate background {
+                duration: 0.2s;
+                easing: ease-in-out;
             }
         }
     }
