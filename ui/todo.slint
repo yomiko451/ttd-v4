@@ -38,11 +38,49 @@ export component Todo inherits HorizontalLayout {
     property <[string]> todo-type: ["单次", "每日", "每周", "每月", "进度"];
     property <[string]> weeks: ["周一", "周二", "周三", "周四", "周五", "周六", "周日"];
     property <int> day: 1;
+    in-out property <string> pop-window-text;
+    function input_check() -> bool {
+        if (text-le.text.is-empty) {
+            pop-window-text  = "待办内容不能为空！";
+            return false;
+        } else if (TodoData.new-todo.kind == TodoKind.Once && TodoData.new-todo.once == TodoData.default-date) {
+            pop-window-text  = "请选择待办日期！";
+            return false;
+        } else {
+            return true;
+        }
+    }
+    function add-todo() {
+        if (!input_check()) {
+            pop.show();
+            return;
+        }
+        TodoData.new-todo.text = text-le.text;
+        text-le.text = "";
+        TodoData.add-todo(TodoData.new-todo);
+    }
     VerticalLayout {
         width: 40%;
         spacing: UiData.space;
         HorizontalLayout {
             spacing: UiData.space;
+            pop := PopupWindow {
+                width: UiData.pop-window-width;
+                height: UiData.pop-window-height;
+                x: (parent.width - self.width) / 2;
+                y: UiData.pop-window-y;
+                Rectangle {
+                    width: 100%;
+                    height: 100%;
+                    background: UiData.primary-color;
+                    border-radius: UiData.border-radius;
+                    Text {
+                        text: pop-window-text;
+                        font-size: UiData.font-size-big;
+                        color: UiData.secondry-text-color;
+                    }
+                }
+            }
             type-cbx := ComboBox {
                 width: UiData.combobox-width;
                 model: todo-type;
@@ -82,7 +120,7 @@ export component Todo inherits HorizontalLayout {
                 horizontal-stretch: 1;
                 spacing: UiData.padding;
                 Button {
-                    text: TodoData.new-todo.once == UiData.default-date ? "选择日期" : TodoData.new-todo.once.year + "年" + TodoData.new-todo.once.month + "月" + TodoData.new-todo.once.day + "日";
+                    text: TodoData.new-todo.once == TodoData.default-date ? "选择日期" : TodoData.new-todo.once.year + "年" + TodoData.new-todo.once.month + "月" + TodoData.new-todo.once.day + "日";
                     clicked => {
                         date-picker-once.show();
                     }
@@ -91,7 +129,7 @@ export component Todo inherits HorizontalLayout {
             if type-cbx.current-index == 1: HorizontalLayout {
                 vertical-stretch: 1;
                 Button {
-                    text: TodoData.new-todo.deadline == UiData.default-date ? "截止日期（可选）" : TodoData.new-todo.deadline.year + "年" + TodoData.new-todo.deadline.month + "月" + TodoData.new-todo.deadline.day + "日";
+                    text: TodoData.new-todo.deadline == TodoData.default-date ? "截止日期（可选）" : TodoData.new-todo.deadline.year + "年" + TodoData.new-todo.deadline.month + "月" + TodoData.new-todo.deadline.day + "日";
                     clicked => {
                         date-picker.show();
                     }
@@ -109,7 +147,7 @@ export component Todo inherits HorizontalLayout {
                 }
 
                 Button {
-                    text: TodoData.new-todo.deadline == UiData.default-date ? "截止日期（可选）" : TodoData.new-todo.deadline.year + "年" + TodoData.new-todo.deadline.month + "月" + TodoData.new-todo.deadline.day + "日";
+                    text: TodoData.new-todo.deadline == TodoData.default-date ? "截止日期（可选）" : TodoData.new-todo.deadline.year + "年" + TodoData.new-todo.deadline.month + "月" + TodoData.new-todo.deadline.day + "日";
                     clicked => {
                         date-picker.show();
                     }
@@ -128,7 +166,7 @@ export component Todo inherits HorizontalLayout {
                 }
 
                 Button {
-                    text: TodoData.new-todo.deadline == UiData.default-date ? "截止日期（可选）" : TodoData.new-todo.deadline.year + "年" + TodoData.new-todo.deadline.month + "月" + TodoData.new-todo.deadline.day + "日";
+                    text: TodoData.new-todo.deadline == TodoData.default-date ? "截止日期（可选）" : TodoData.new-todo.deadline.year + "年" + TodoData.new-todo.deadline.month + "月" + TodoData.new-todo.deadline.day + "日";
                     clicked => {
                         date-picker.show();
                     }
@@ -164,19 +202,15 @@ export component Todo inherits HorizontalLayout {
         HorizontalLayout {
             spacing: UiData.padding;
             text-le := LineEdit {
-                accepted(text) => {
-                    TodoData.new-todo.text = text;
-                    self.text = "";
-                    TodoData.add-todo(TodoData.new-todo);
+                accepted(_) => {
+                    add-todo();
                 }
             }
 
             Button {
                 text: "添加待办";
                 clicked => {
-                    TodoData.new-todo.text = text-le.text;
-                    text-le.text = "";
-                    TodoData.add-todo(TodoData.new-todo);
+                    add-todo();
                 }
             }
         }
@@ -191,7 +225,7 @@ export component Todo inherits HorizontalLayout {
             padding-bottom: UiData.padding;
             Text {
                 color: UiData.secondry-text-color;
-                font-size: UiData.font-size-super-big;
+                font-size: UiData.font-size-big;
                 vertical-alignment: center;
                 text: "全部";
                 TouchArea {
@@ -202,7 +236,7 @@ export component Todo inherits HorizontalLayout {
             }
             Text {
                 color: UiData.secondry-text-color;
-                font-size: UiData.font-size-super-big;
+                font-size: UiData.font-size-big;
                 vertical-alignment: center;
                 text: "每周";
                 TouchArea {
@@ -213,7 +247,7 @@ export component Todo inherits HorizontalLayout {
             }
             Text {
                 color: UiData.secondry-text-color;
-                font-size: UiData.font-size-super-big;
+                font-size: UiData.font-size-big;
                 vertical-alignment: center;
                 text: "每日";
                 TouchArea {
@@ -224,7 +258,7 @@ export component Todo inherits HorizontalLayout {
             }
             Text {
                 color: UiData.secondry-text-color;
-                font-size: UiData.font-size-super-big;
+                font-size: UiData.font-size-big;
                 vertical-alignment: center;
                 text: "每月";
                 TouchArea {
@@ -235,7 +269,7 @@ export component Todo inherits HorizontalLayout {
             }
             Text {
                 color: UiData.secondry-text-color;
-                font-size: UiData.font-size-super-big;
+                font-size: UiData.font-size-big;
                 vertical-alignment: center;
                 text: "进度";
                 TouchArea {
@@ -246,7 +280,7 @@ export component Todo inherits HorizontalLayout {
             }
             Text {
                 color: UiData.secondry-text-color;
-                font-size: UiData.font-size-super-big;
+                font-size: UiData.font-size-big;
                 horizontal-stretch: 1;
                 horizontal-alignment: right;
                 vertical-alignment: center;
@@ -292,29 +326,30 @@ export component Todo inherits HorizontalLayout {
                     HorizontalLayout {
                         alignment: start;
                         spacing: UiData.space-big;
-                        
                         Text {
-                            
                             text: TodoData.format-todokind(todo.kind);
                         }
                         Text {
-                            
                             text: todo.created-at;
                         }
                         if todo.kind != TodoKind.Progress: Text {
-                            
                             text: todo.days-to-start == 0 ? "今天" : todo.days-to-start + "天后";
                         }
                         if todo.kind == TodoKind.Progress: Text {
-                            
                             text: "已完成" + todo.current-progress + "/" + todo.max-progress;
                         }
                     }
                     HorizontalLayout {
+                        spacing: UiData.space;
                         padding-left: UiData.padding;
                         padding-right: UiData.padding;
+                        Rectangle {
+                            width: UiData.todo-content-marker;
+                            //vertical-stretch: 1;
+                            border-radius: UiData.border-radius;
+                            background: UiData.primary-color;
+                        }
                         Text {
-                            
                             horizontal-stretch: 1;
                             text: todo.text;
                             wrap: word-wrap;
@@ -334,18 +369,18 @@ export component Todo inherits HorizontalLayout {
             Button {
                 text: "上一个月";
                 clicked => {
-                    if TodoData.current-date.month - 1 < 1 {
-                        TodoData.current-date.month = 12;
-                        TodoData.current-date.year -= 1;
+                    if TodoData.current-calendar.month - 1 < 1 {
+                        TodoData.current-calendar.month = 12;
+                        TodoData.current-calendar.year -= 1;
                     } else {
-                        TodoData.current-date.month -= 1;
+                        TodoData.current-calendar.month -= 1;
                     }
-                    TodoData.update-calendar(TodoData.current-date);
+                    TodoData.update-calendar(TodoData.current-calendar);
                 }
             }
 
             Text {
-                text: TodoData.current-date.year + "年" + TodoData.current-date.month + "月";
+                text: TodoData.current-calendar.year + "年" + TodoData.current-calendar.month + "月";
                 vertical-alignment: center;
                 font-size: UiData.font-size-big;
             }
@@ -353,13 +388,13 @@ export component Todo inherits HorizontalLayout {
             Button {
                 text: "下一个月";
                 clicked => {
-                    if TodoData.current-date.month + 1 > 12 {
-                        TodoData.current-date.month = 1;
-                        TodoData.current-date.year += 1;
+                    if TodoData.current-calendar.month + 1 > 12 {
+                        TodoData.current-calendar.month = 1;
+                        TodoData.current-calendar.year += 1;
                     } else {
-                        TodoData.current-date.month += 1;
+                        TodoData.current-calendar.month += 1;
                     }
-                    TodoData.update-calendar(TodoData.current-date);
+                    TodoData.update-calendar(TodoData.current-calendar);
                 }
             }
         }

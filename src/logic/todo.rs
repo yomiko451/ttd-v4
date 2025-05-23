@@ -36,8 +36,9 @@ pub fn init_calendar(app: Weak<AppWindow>) {
     let current_date = get_month_calendar(*CURRENT_DATE);
     let model = convert_vec_to_model(current_date);
     todo_data.set_calendar(model);
-    // 顺便初始化当前日期
+    // 顺便初始化当前日期和当前日历
     todo_data.set_current_date((*CURRENT_DATE).into());
+    todo_data.set_current_calendar((*CURRENT_DATE).into());
 }
 
 fn get_month_calendar(date: NaiveDate) -> Vec<Vec<SlintDate>> {

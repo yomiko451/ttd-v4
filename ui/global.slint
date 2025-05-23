@@ -90,14 +90,12 @@ export global UiData {
     in-out property <length> border-radius: 5px;
     in-out property <length> menu-button-height: 40px;
     in-out property <length> menu-button-font-size: 18px;
-
+    in-out property <length> pop-window-height: 30px;
+    in-out property <length> pop-window-width: 300px;
+    in-out property <length> pop-window-y: 10px;
     in-out property <length> anime-list-title-height: 30px;
-
-    in-out property <Date> default-date: {
-        year: 2025,
-        month: 1,
-        day: 1
-    };
+    in-out property <length> todo-content-marker: 6px;
+    
     in-out property <Tab> current-tab: Tab.Home;
 }
 
@@ -133,18 +131,25 @@ export global TodoData {
     callback add-todo(todo: Todo);
     callback update-calendar(new-date: Date);
     in-out property <[[Date]]> calendar;
+    //当前日期是不变的，主要用来进行比对，当前日历是随着用户输入的日期而改变的
+    in-out property <Date> current_calendar;
     in-out property <Date> current-date;
     in-out property <[Todo]> todo-list;
+    in-out property <Date> default-date: {
+        year: 2025,
+        month: 1,
+        day: 1
+    };
     in-out property <Todo> new-todo: {
         text: "",
         created-at: "",
         recurrence: false,
         week: 0,
         day: 1,
-        once: UiData.default-date,
+        once: default-date,
         current_progress: 50,
         max_progress: 100,
-        deadline: UiData.default-date,
+        deadline: default-date,
         kind: TodoKind.Once,
         days_to_start: 0
     };
