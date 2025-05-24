@@ -1,14 +1,14 @@
 use chrono::Datelike;
 
 mod anime;
-mod todo;
 mod init;
+mod todo;
 
 pub use crate::Date as SlintDate;
 pub use anime::{get_anime, init_anime_schedule, set_anime_logic};
 pub use init::{APP_PATH, init};
 use serde::{Deserialize, Serialize};
-pub use todo::{CURRENT_DATE, init_calendar, set_todo_logic, load_todos};
+pub use todo::{CURRENT_DATE, init_calendar, load_todos, set_todo_logic};
 
 impl Serialize for SlintDate {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -34,6 +34,26 @@ impl<'de> Deserialize<'de> for SlintDate {
         let month = parts[1].parse::<i32>().map_err(serde::de::Error::custom)?;
         let day = parts[2].parse::<i32>().map_err(serde::de::Error::custom)?;
         Ok(SlintDate { year, month, day })
+    }
+}
+
+impl PartialOrd for SlintDate {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        if self.year < other.year {
+            return Some(std::cmp::Ordering::Less);
+        } else if self.year > other.year {
+            return Some(std::cmp::Ordering::Greater);
+        } else if self.month < other.month {
+            return Some(std::cmp::Ordering::Less);
+        } else if self.month > other.month {
+            return Some(std::cmp::Ordering::Greater);
+        } else if self.day < other.day {
+            return Some(std::cmp::Ordering::Less);
+        } else if self.day > other.day {
+            return Some(std::cmp::Ordering::Greater);
+        } else {
+            return Some(std::cmp::Ordering::Equal);
+        }
     }
 }
 

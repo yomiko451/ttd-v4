@@ -1,5 +1,5 @@
+use crate::{Anime, AnimeData, AppWindow, DayAnime, logic::SlintDate};
 use crate::{logic::APP_PATH, logic::CURRENT_DATE};
-use crate::{Anime, AnimeData, AppWindow, logic::SlintDate, DayAnime};
 use chrono::{Datelike, Local, NaiveDate};
 use reqwest::Client;
 use scraper::{Html, Selector};
@@ -11,12 +11,11 @@ use tokio::runtime::Runtime;
 
 const BASE_URL: &str = "https://yuc.wiki/";
 
-
 pub fn set_anime_logic(app_weak: Weak<AppWindow>) {
     let app = app_weak.unwrap();
     let anime_data = app.global::<AnimeData>();
     let weak = app_weak.clone();
-    //TODO: 
+    //TODO:
 }
 
 pub fn get_anime(app_weak: Weak<AppWindow>, anime_schedule: SlintDate) {
@@ -43,8 +42,8 @@ pub fn get_anime(app_weak: Weak<AppWindow>, anime_schedule: SlintDate) {
             }
 
             let anime_data = app.global::<AnimeData>();
-                anime_data.set_week_anime_list(Rc::new(slint::VecModel::from(week_anime_list)).into());
-                anime_data.set_is_loading(false);
+            anime_data.set_week_anime_list(Rc::new(slint::VecModel::from(week_anime_list)).into());
+            anime_data.set_is_loading(false);
         })
         .unwrap();
     });

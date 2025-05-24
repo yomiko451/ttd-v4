@@ -32,9 +32,9 @@ export struct DayAnime {
 
 
 @rust-attr(derive(serde::Serialize, serde::Deserialize))
-struct Todo {
+export struct Todo {
     text: string,
-    created-at: string,
+    created-at: Date,
     recurrence: bool,
     week: int,
     day: int,
@@ -46,6 +46,10 @@ struct Todo {
     days_to_start: int,
 }
 
+export struct CalendarItem {
+    date: Date,
+    todo-list: [Todo]
+}
 
 export global AnimeData {
     callback update-anime-data;// TODO:  add implementation
@@ -77,8 +81,10 @@ export global UiData {
     in-out property <color> todo-selected-color: #E5E5E5;
     in-out property <color> warn-text-color: #FF5252; // TODO: 红色要不要
     in-out property <length> default-font-size: 14px;
+    in-out property <length> font-size-small: 12px;
     in-out property <length> font-size-big: 16px;
     in-out property <length> font-size-super-big: 18px;
+    in-out property <length> calendar-index-size: 30px;
     in-out property <length> tab-padding-top-bottom: 30px;
     in-out property <length> tab-padding-left-right: 15px;
     out property <int> spinbox-max: 10000;
@@ -95,6 +101,9 @@ export global UiData {
     in-out property <length> pop-window-height: 30px;
     in-out property <length> pop-window-width: 300px;
     in-out property <length> pop-window-y: 10px;
+    in-out property <length> pop-window-shadow-y: 5px;
+    in-out property <length> pop-window-shadow-blur: 5px;
+    in-out property <color> pop-window-shadow-color: rgba(0, 0, 0, 0.15);
     in-out property <length> anime-list-title-height: 30px;
     in-out property <length> todo-content-marker: 6px;
     
@@ -132,7 +141,7 @@ export global TodoData {
     }
     callback add-todo(todo: Todo);
     callback update-calendar(new-date: Date);
-    in-out property <[[Date]]> calendar;
+    in-out property <[[CalendarItem]]> calendar;
     //当前日期是不变的，主要用来进行比对，当前日历是随着用户输入的日期而改变的
     in-out property <Date> current_calendar;
     in-out property <Date> current-date;
@@ -144,7 +153,7 @@ export global TodoData {
     };
     in-out property <Todo> new-todo: {
         text: "",
-        created-at: "",
+        created-at: default-date,
         recurrence: false,
         week: 0,
         day: 1,

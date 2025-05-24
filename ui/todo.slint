@@ -1,35 +1,60 @@
 import {Date, Button, LineEdit, HorizontalBox, CheckBox, ComboBox, VerticalBox, DatePickerPopup, Slider, SpinBox, Spinner, TabWidget, GroupBox, GridBox, ListView, ScrollView} from "std-widgets.slint";
-import { TodoData, TodoKind, UiData } from "global.slint";
+import { Todo, TodoData, TodoKind, UiData } from "global.slint";
 
 
 component TodoCard inherits Rectangle {
+    horizontal-stretch: 1;
+    vertical-stretch: 1;
+    function day-suffix(day: int) -> string {
+        if day == 1 || day == 21 || day == 31 {
+            return "st";
+        } else if day == 2 || day == 22 {
+            return "nd";
+        } else if day == 3 || day == 23 {
+            return "rd";
+        } else {
+            return "th";
+        }
+    }
     in-out property <int> day;
-    width: 75px;
-    height: 100px;
+    in-out property <[Todo]> todo-list;
     background: UiData.primary-color;
     border-radius: UiData.border-radius;
     VerticalLayout {
-        height: 100%;
         width: 100%;
+        padding: UiData.padding;
         spacing: UiData.space;
         HorizontalLayout {
-            height: 50%;
-            width: parent.width;
-            spacing: UiData.space;
+            alignment: start;
             Text {
-                width: 75%;
                 text: day == 0 ? "" : day;
-                font-size: 32px;
                 vertical-alignment: center;
-                horizontal-alignment: center;
+                height: UiData.calendar-index-size;
+                font-size: UiData.calendar-index-size;
                 color: UiData.secondry-text-color;
+            }
+            VerticalLayout {
+                alignment: end;
+                Text {
+                text: day == 0 ? "" : day-suffix(day);
+                font-size: UiData.font-size-big;
+                color: UiData.secondry-text-color;
+            }
+            }
+        }
+        ListView {
+            for todo[i] in todo-list: Text {
+                text: (i + 1) +  ". " + todo.text;
+                overflow: elide;
+                color: UiData.secondry-text-color;
+                font-size: UiData.font-size-small;
             }
         }
     }
 }
 
 export component Todo inherits HorizontalLayout {
-    width: 100%;
+    height: 100%;
     padding-top: UiData.tab-padding-top-bottom;
     padding-bottom: UiData.tab-padding-top-bottom;
     padding-left: UiData.tab-padding-left-right;
@@ -41,12 +66,19 @@ export component Todo inherits HorizontalLayout {
     in-out property <string> pop-window-text;
     function input_check() -> bool {
         if (text-le.text.is-empty) {
-            pop-window-text  = "待办内容不能为空！";
+            pop-window-text  = "请先输入待办内容";
             return false;
         } else if (TodoData.new-todo.kind == TodoKind.Once && TodoData.new-todo.once == TodoData.default-date) {
-            pop-window-text  = "请选择待办日期！";
+            pop-window-text  = "请先选择待办日期！";
             return false;
-        } else {
+        } else if (TodoData.new-todo.kind == TodoKind.Once && TodoData.new-todo.once < TodoData.current-date) {
+            pop-window-text  = "请输入正确的待办日期！";
+            return false;
+        } else if ((TodoData.new-todo.kind != TodoKind.Once || TodoData.new-todo.kind != TodoKind.Progress) && TodoData.new-todo.deadline < TodoData.current-date) {
+            pop-window-text  = "请输入正确的截止日期！";
+            return false;
+        }
+        else {
             return true;
         }
     }
@@ -74,6 +106,9 @@ export component Todo inherits HorizontalLayout {
                     height: 100%;
                     background: UiData.primary-color;
                     border-radius: UiData.border-radius;
+                    drop-shadow-offset-y: UiData.pop-window-shadow-y;
+                    drop-shadow-blur: UiData.pop-window-shadow-blur;
+                    drop-shadow-color: UiData.pop-window-shadow-color;
                     Text {
                         text: pop-window-text;
                         font-size: UiData.font-size-big;
@@ -207,7 +242,7 @@ export component Todo inherits HorizontalLayout {
                 }
             }
 
-            Button {
+            default-bt := Button {
                 text: "添加待办";
                 clicked => {
                     add-todo();
@@ -330,7 +365,7 @@ export component Todo inherits HorizontalLayout {
                             text: TodoData.format-todokind(todo.kind);
                         }
                         Text {
-                            text: todo.created-at;
+                            text: todo.created-at.year + "-" + todo.created-at.month + "-" + todo.created-at.day;
                         }
                         if todo.kind != TodoKind.Progress: Text {
                             text: todo.days-to-start == 0 ? "今天" : todo.days-to-start + "天后";
@@ -400,14 +435,19 @@ export component Todo inherits HorizontalLayout {
         }
 
         HorizontalLayout {
-            alignment: center;
             spacing: UiData.space;
-            height: 95%;
-            for weeks in TodoData.calendar: VerticalLayout {
-                alignment: center;
+            vertical-stretch: 1;
+            for week-todos[i] in TodoData.calendar: VerticalLayout {
                 spacing: UiData.space;
-                for date in weeks: TodoCard {
-                    day: date.day;
+                Text {
+                    height: default-bt.height;
+                    text: weeks[i];
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                for item in week-todos: TodoCard {
+                    day: item.date.day;
+                    todo-list: item.todo-list;
                 }
             }
         }
