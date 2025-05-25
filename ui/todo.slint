@@ -1,5 +1,5 @@
 import {Date, Button, LineEdit, HorizontalBox, CheckBox, ComboBox, VerticalBox, DatePickerPopup, Slider, SpinBox, Spinner, TabWidget, GroupBox, GridBox, ListView, ScrollView} from "std-widgets.slint";
-import { Todo, TodoData, TodoKind, UiData } from "global.slint";
+import { Filter, Todo, TodoData, TodoKind, UiData } from "global.slint";
 
 
 component TodoCard inherits Rectangle {
@@ -33,18 +33,20 @@ component TodoCard inherits Rectangle {
                 font-size: UiData.calendar-index-size;
                 color: UiData.secondry-text-color;
             }
+
             VerticalLayout {
                 alignment: end;
                 Text {
-                text: day == 0 ? "" : day-suffix(day);
-                font-size: UiData.font-size-big;
-                color: UiData.secondry-text-color;
-            }
+                    text: day == 0 ? "" : day-suffix(day);
+                    font-size: UiData.font-size-big;
+                    color: UiData.secondry-text-color;
+                }
             }
         }
+
         ListView {
             for todo[i] in todo-list: Text {
-                text: (i + 1) +  ". " + todo.text;
+                text: (i + 1) + ". " + todo.text;
                 overflow: elide;
                 color: UiData.secondry-text-color;
                 font-size: UiData.font-size-small;
@@ -66,19 +68,18 @@ export component Todo inherits HorizontalLayout {
     in-out property <string> pop-window-text;
     function input_check() -> bool {
         if (text-le.text.is-empty) {
-            pop-window-text  = "请先输入待办内容";
+            pop-window-text = "请先输入待办内容";
             return false;
         } else if (TodoData.new-todo.kind == TodoKind.Once && TodoData.new-todo.once == TodoData.default-date) {
-            pop-window-text  = "请先选择待办日期！";
+            pop-window-text = "请先选择待办日期！";
             return false;
         } else if (TodoData.new-todo.kind == TodoKind.Once && TodoData.new-todo.once < TodoData.current-date) {
-            pop-window-text  = "请输入正确的待办日期！";
+            pop-window-text = "请输入正确的待办日期！";
             return false;
-        } else if ((TodoData.new-todo.kind != TodoKind.Once || TodoData.new-todo.kind != TodoKind.Progress) && TodoData.new-todo.deadline < TodoData.current-date) {
-            pop-window-text  = "请输入正确的截止日期！";
+        } else if ((TodoData.new-todo.kind == TodoKind.Daily && TodoData.new-todo.deadline < TodoData.current-date) || (TodoData.new-todo.kind == TodoKind.Weekly && TodoData.new-todo.deadline < TodoData.current-date) || (TodoData.new-todo.kind == TodoKind.Monthly && TodoData.new-todo.deadline < TodoData.new-todo.once)) {
+            pop-window-text = "请输入正确的截止日期！";
             return false;
-        }
-        else {
+        } else {
             return true;
         }
     }
@@ -116,6 +117,7 @@ export component Todo inherits HorizontalLayout {
                     }
                 }
             }
+
             type-cbx := ComboBox {
                 width: UiData.combobox-width;
                 model: todo-type;
@@ -235,7 +237,7 @@ export component Todo inherits HorizontalLayout {
         }
 
         HorizontalLayout {
-            spacing: UiData.padding;
+            spacing: UiData.space;
             text-le := LineEdit {
                 accepted(_) => {
                     add-todo();
@@ -249,113 +251,200 @@ export component Todo inherits HorizontalLayout {
                 }
             }
         }
+
         Rectangle {
-            background: UiData.primary-color;
+            in-out property <int> selected-index;
             border-radius: UiData.border-radius;
+            background: UiData.primary-color;
             HorizontalLayout {
-            spacing: UiData.space;
-            padding-left: UiData.tab-padding-left-right; 
-            padding-right: UiData.tab-padding-left-right;
-            padding-top: UiData.padding;
-            padding-bottom: UiData.padding;
-            Text {
-                color: UiData.secondry-text-color;
-                font-size: UiData.font-size-big;
-                vertical-alignment: center;
-                text: "全部";
-                TouchArea {
-                    clicked => {
-                        parent.text = "lalala"
+                padding-top: UiData.padding;
+                padding-bottom: UiData.padding;
+                padding-right: UiData.padding-big;
+                padding-left: UiData.padding-big;
+                spacing: UiData.space-big;
+                Text {
+                    color: UiData.secondry-text-color;
+                    opacity: 0.5;
+                    font-size: UiData.font-size-big;
+                    text: "全部";
+                    TouchArea {
+                        clicked => {
+                            selected-index = 0;
+                            TodoData.filter = Filter.All;
+                        }
+                    }
+
+                    states [
+                        active when selected-index == 0: {
+                            opacity: 1;
+                        }
+                    ]
+                    animate opacity {
+                        duration: 0.2s;
+                        easing: ease-in-out;
                     }
                 }
-            }
-            Text {
-                color: UiData.secondry-text-color;
-                font-size: UiData.font-size-big;
-                vertical-alignment: center;
-                text: "每周";
-                TouchArea {
-                    clicked => {
-                        parent.text = "lalala"
+
+                Text {
+                    color: UiData.secondry-text-color;
+                    opacity: 0.5;
+                    font-size: UiData.font-size-big;
+                    text: "单次";
+                    TouchArea {
+                        clicked => {
+                            selected-index = 1;
+                            TodoData.filter = Filter.Once;
+                        }
+                    }
+
+                    states [
+                        active when selected-index == 1: {
+                            opacity: 1;
+                        }
+                    ]
+                    animate opacity {
+                        duration: 0.2s;
+                        easing: ease-in-out;
                     }
                 }
-            }
-            Text {
-                color: UiData.secondry-text-color;
-                font-size: UiData.font-size-big;
-                vertical-alignment: center;
-                text: "每日";
-                TouchArea {
-                    clicked => {
-                        parent.text = "lalala"
+
+                Text {
+                    color: UiData.secondry-text-color;
+                    opacity: 0.5;
+                    font-size: UiData.font-size-big;
+                    text: "每日";
+                    TouchArea {
+                        clicked => {
+                            selected-index = 2;
+                            TodoData.filter = Filter.Daily;
+                        }
+                    }
+
+                    states [
+                        active when selected-index == 2: {
+                            opacity: 1;
+                        }
+                    ]
+                    animate opacity {
+                        duration: 0.2s;
+                        easing: ease-in-out;
                     }
                 }
-            }
-            Text {
-                color: UiData.secondry-text-color;
-                font-size: UiData.font-size-big;
-                vertical-alignment: center;
-                text: "每月";
-                TouchArea {
-                    clicked => {
-                        parent.text = "lalala"
+
+                Text {
+                    color: UiData.secondry-text-color;
+                    opacity: 0.5;
+                    font-size: UiData.font-size-big;
+                    text: "每周";
+                    TouchArea {
+                        clicked => {
+                            selected-index = 3;
+                            TodoData.filter = Filter.Weekly;
+                        }
+                    }
+
+                    states [
+                        active when selected-index == 3: {
+                            opacity: 1;
+                        }
+                    ]
+                    animate opacity {
+                        duration: 0.2s;
+                        easing: ease-in-out;
                     }
                 }
-            }
-            Text {
-                color: UiData.secondry-text-color;
-                font-size: UiData.font-size-big;
-                vertical-alignment: center;
-                text: "进度";
-                TouchArea {
-                    clicked => {
-                        parent.text = "lalala"
+
+                Text {
+                    color: UiData.secondry-text-color;
+                    opacity: 0.5;
+                    font-size: UiData.font-size-big;
+                    text: "每月";
+                    TouchArea {
+                        clicked => {
+                            selected-index = 4;
+                            TodoData.filter = Filter.Monthly
+                        }
+                    }
+
+                    states [
+                        active when selected-index == 4: {
+                            opacity: 1;
+                        }
+                    ]
+                    animate opacity {
+                        duration: 0.2s;
+                        easing: ease-in-out;
                     }
                 }
-            }
-            Text {
-                color: UiData.secondry-text-color;
-                font-size: UiData.font-size-big;
-                horizontal-stretch: 1;
-                horizontal-alignment: right;
-                vertical-alignment: center;
-                text: "3 /" + TodoData.todo-list.length;
+
+                Text {
+                    color: UiData.secondry-text-color;
+                    opacity: 0.5;
+                    font-size: UiData.font-size-big;
+                    text: "进度";
+                    TouchArea {
+                        clicked => {
+                            selected-index = 5;
+                            TodoData.filter = Filter.Progress;
+                        }
+                    }
+
+                    states [
+                        active when selected-index == 5: {
+                            opacity: 1;
+                        }
+                    ]
+                    animate opacity {
+                        duration: 0.2s;
+                        easing: ease-in-out;
+                    }
+                }
+
+                Text {
+                    color: UiData.secondry-text-color;
+                    horizontal-stretch: 1;
+                    horizontal-alignment: right;
+                    font-size: UiData.font-size-big;
+                    text: TodoData.filtered-todo-list.length + " / " + TodoData.todo-list.length;
+                }
             }
         }
-        }
+
         ListView {
             in-out property <int> selected-todo: -1;
-            for todo[i] in TodoData.todo-list: Rectangle {
+            for todo[i] in TodoData.filtered-todo-list: Rectangle {
                 border-radius: UiData.border-radius;
                 TouchArea {
                     clicked => {
                         selected-todo = i;
                     }
                 }
+
                 states [
                     active when selected-todo == i: {
                         background: UiData.todo-selected-color;
                     }
                 ]
                 animate background {
-                     duration: 0.2s;
-                     easing: ease-in-out;
+                    duration: 0.2s;
+                    easing: ease-in-out;
                 }
-
                 VerticalLayout {
                     if selected-todo == i: HorizontalLayout {
-                            alignment: start;
-                            spacing: UiData.space;
-                            Button {
-                                text: "编辑";
-                            }
-                            Button {
-                                text: "删除";
-                            }
-                            Button {
-                                text: "完成";
-                            }
+                        alignment: start;
+                        spacing: UiData.space;
+                        Button {
+                            text: "编辑";
                         }
+
+                        Button {
+                            text: "删除";
+                        }
+
+                        Button {
+                            text: "完成";
+                        }
+                    }
                     padding: UiData.padding;
                     spacing: UiData.padding;
                     HorizontalLayout {
@@ -364,9 +453,11 @@ export component Todo inherits HorizontalLayout {
                         Text {
                             text: TodoData.format-todokind(todo.kind);
                         }
+
                         Text {
                             text: todo.created-at.year + "-" + todo.created-at.month + "-" + todo.created-at.day;
                         }
+
                         if todo.kind != TodoKind.Progress: Text {
                             text: todo.days-to-start == 0 ? "今天" : todo.days-to-start + "天后";
                         }
@@ -374,6 +465,7 @@ export component Todo inherits HorizontalLayout {
                             text: "已完成" + todo.current-progress + "/" + todo.max-progress;
                         }
                     }
+
                     HorizontalLayout {
                         spacing: UiData.space;
                         padding-left: UiData.padding;
@@ -384,6 +476,7 @@ export component Todo inherits HorizontalLayout {
                             border-radius: UiData.border-radius;
                             background: UiData.primary-color;
                         }
+
                         Text {
                             horizontal-stretch: 1;
                             text: todo.text;
@@ -445,6 +538,7 @@ export component Todo inherits HorizontalLayout {
                     horizontal-alignment: center;
                     vertical-alignment: center;
                 }
+
                 for item in week-todos: TodoCard {
                     day: item.date.day;
                     todo-list: item.todo-list;

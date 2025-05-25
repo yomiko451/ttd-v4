@@ -1,5 +1,16 @@
 import {Date} from "std-widgets.slint";
 
+export enum Filter {
+    All,
+    Once,
+    Daily,
+    Weekly,
+    Monthly,
+    Progress,
+    Completed,
+}
+
+
 @rust-attr(derive(serde::Serialize, serde::Deserialize))
 export enum TodoKind {
     Once,
@@ -33,6 +44,7 @@ export struct DayAnime {
 
 @rust-attr(derive(serde::Serialize, serde::Deserialize))
 export struct Todo {
+    id: string,
     text: string,
     created-at: Date,
     recurrence: bool,
@@ -93,7 +105,7 @@ export global UiData {
     in-out property <length> space: 5px;
     in-out property <length> space-big: 15px;
     in-out property <length> padding: 5px;
-    //in-out property <length> padding-big: 10px;
+    in-out property <length> padding-big: 10px;
     in-out property <length> border-radius-big: 10px;
     in-out property <length> border-radius: 5px;
     in-out property <length> menu-button-height: 40px;
@@ -106,7 +118,6 @@ export global UiData {
     in-out property <color> pop-window-shadow-color: rgba(0, 0, 0, 0.15);
     in-out property <length> anime-list-title-height: 30px;
     in-out property <length> todo-content-marker: 6px;
-    
     in-out property <Tab> current-tab: Tab.Home;
 }
 
@@ -140,12 +151,15 @@ export global TodoData {
         };
     }
     callback add-todo(todo: Todo);
+    pure callback filter-todo(filter: Filter, todo: [Todo]) -> [Todo];
     callback update-calendar(new-date: Date);
     in-out property <[[CalendarItem]]> calendar;
     //当前日期是不变的，主要用来进行比对，当前日历是随着用户输入的日期而改变的
     in-out property <Date> current_calendar;
     in-out property <Date> current-date;
     in-out property <[Todo]> todo-list;
+    in-out property <Filter> filter;
+    in-out property <[Todo]> filtered-todo-list: filter-todo(filter, todo-list);
     in-out property <Date> default-date: {
         year: 2025,
         month: 1,

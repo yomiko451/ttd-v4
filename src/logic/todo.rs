@@ -1,8 +1,7 @@
 use crate::{
-    AppWindow, CalendarItem, Todo, TodoData, TodoKind,
-    logic::{APP_PATH, SlintDate},
+    logic::{SlintDate, APP_PATH}, AppWindow, CalendarItem, Filter, Todo, TodoData, TodoKind
 };
-use chrono::{Datelike, Days, Local, NaiveDate};
+use chrono::{Datelike, Days, Local, NaiveDate, Utc};
 use slint::{ComponentHandle, Model, ModelRc, Weak};
 use std::{rc::Rc, sync::LazyLock};
 
@@ -29,6 +28,7 @@ pub fn set_todo_logic(app: Weak<AppWindow>) {
         let todo_data = app.global::<TodoData>();
         let mut todos = todo_data.get_todo_list().iter().collect::<Vec<Todo>>();
         todo.created_at = Local::now().date_naive().into();
+        todo.id = get_timestamp_id().into();
         todo.days_to_start = calculate_days_to_start(&todo);
         let mut calendar = todo_data
             .get_calendar()
@@ -40,6 +40,7 @@ pub fn set_todo_logic(app: Weak<AppWindow>) {
         save_todos(&todos);
         todo_data.set_todo_list(Rc::new(slint::VecModel::from(todos)).into());
     });
+    todo_data.on_filter_todo(filter_todo);
 }
 
 pub fn init_calendar(app: Weak<AppWindow>) {
@@ -137,7 +138,6 @@ fn calculate_days_to_start(todo: &Todo) -> i32 {
             if day_now <= day {
                 day - day_now
             } else {
-                println!("{}", day);
                 let next_date = loop {
                     let (y, m) = match month {
                         12 => (CURRENT_DATE.year() + 1, 1),
@@ -159,14 +159,14 @@ fn calculate_days_to_start(todo: &Todo) -> i32 {
 }
 
 fn save_todos(todos: &Vec<Todo>) {
-    let path = APP_PATH.join("data").join("todo_lsit.json");
+    let path = APP_PATH.join("data").join("todo_list.json");
     let file = std::fs::File::create(path).unwrap();
     serde_json::to_writer(file, &todos).unwrap();
 }
 
 pub fn load_todos(app: Weak<AppWindow>) {
     let app = app.unwrap();
-    let path = APP_PATH.join("data").join("todo_lsit.json");
+    let path = APP_PATH.join("data").join("todo_list.json");
     if path.exists() {
         let todos: Vec<Todo> = serde_json::from_reader(std::fs::File::open(path).unwrap()).unwrap();
         let model = Rc::new(slint::VecModel::from(todos));
@@ -229,5 +229,38 @@ fn match_date_with_todo(calendar: &mut Vec<Vec<CalendarItem>>, todo: &Todo) {
                 }
             }
         }
+    }
+}
+
+fn get_timestamp_id() -> String {
+    let timestamp = Utc::now().timestamp();
+    let id = format!("{:x}", timestamp);
+    id
+}
+
+fn filter_todo(filter: Filter, model: ModelRc<Todo>) -> ModelRc<Todo> { 
+    match filter {
+        Filter::All => model,
+        Filter::Once => {
+            let vec = model.iter().filter(|t| t.kind == TodoKind::Once).collect::<Vec<Todo>>();
+            Rc::new(slint::VecModel::from(vec)).into()
+        }
+        Filter::Daily => {
+            let vec = model.iter().filter(|t| t.kind == TodoKind::Daily).collect::<Vec<Todo>>();
+            Rc::new(slint::VecModel::from(vec)).into()
+        }
+        Filter::Weekly => {
+            let vec = model.iter().filter(|t| t.kind == TodoKind::Weekly).collect::<Vec<Todo>>();
+            Rc::new(slint::VecModel::from(vec)).into()
+        }
+        Filter::Monthly => {
+            let vec = model.iter().filter(|t| t.kind == TodoKind::Monthly).collect::<Vec<Todo>>();
+            Rc::new(slint::VecModel::from(vec)).into()
+        }
+        Filter::Progress => {
+            let vec = model.iter().filter(|t| t.kind == TodoKind::Progress).collect::<Vec<Todo>>();
+            Rc::new(slint::VecModel::from(vec)).into()
+        }
+        _ => model
     }
 }
