@@ -1,7 +1,6 @@
 slint::include_modules!();
 
 mod logic;
-mod model;
 
 fn main() -> Result<(), slint::PlatformError> {
     let app = AppWindow::new()?;

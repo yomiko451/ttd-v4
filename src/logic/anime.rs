@@ -1,12 +1,11 @@
-use crate::{Anime, AnimeData, AppWindow, DayAnime, logic::SlintDate};
-use crate::{logic::APP_PATH, logic::CURRENT_DATE};
-use chrono::{Datelike, Local, NaiveDate};
+use crate::{Anime, AnimeData, AppWindow, DayAnime, logic::{SlintDate, APP_PATH}};
+use chrono::Datelike;
 use reqwest::Client;
 use scraper::{Html, Selector};
 use slint::{
     ComponentHandle, Image, Model, Rgba8Pixel, SharedPixelBuffer, Weak, invoke_from_event_loop,
 };
-use std::{io::Write, rc::Rc, sync::LazyLock};
+use std::{io::Write, rc::Rc};
 use tokio::runtime::Runtime;
 
 const BASE_URL: &str = "https://yuc.wiki/";

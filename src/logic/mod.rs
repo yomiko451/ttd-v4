@@ -1,6 +1,4 @@
 use chrono::{Datelike, Weekday};
-use slint::ModelRc;
-
 mod anime;
 mod init;
 mod todo;
@@ -10,7 +8,7 @@ use crate::SlintWeekday;
 pub use anime::{get_anime, init_anime_schedule, set_anime_logic};
 pub use init::{APP_PATH, init};
 use serde::{Deserialize, Serialize};
-pub use todo::{CURRENT_DATE, WEEKDAY, init_todos, match_week_with_day, set_todo_logic};
+pub use todo::{init_todos, set_todo_logic};
 
 impl Serialize for SlintDate {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
