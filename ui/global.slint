@@ -1,13 +1,13 @@
 import {Date} from "std-widgets.slint";
 
 export enum Filter {
+    Today,
     All,
     Once,
     Daily,
     Weekly,
     Monthly,
     Progress,
-    Completed,
 }
 
 @rust-attr(derive(serde::Serialize, serde::Deserialize))
@@ -102,7 +102,7 @@ export global UiData {
     in-out property <length> cover-height: 150px;
     in-out property <color> primary-text-color: #303133;
     in-out property <color> secondry-text-color: #FFFFFF;
-    in-out property <color> todo-selected-color: rgb(136, 193, 159);
+    in-out property <color> todo-selected-color: rgba(106, 177, 135, 0.15);
     in-out property <color> warn-text-color: #FF5252; // TODO: 红色要不要
     in-out property <length> default-font-size: 14px;
     in-out property <length> font-size-small: 12px;
@@ -178,6 +178,24 @@ export global TodoData {
         } else {
             return SlintWeekday.Sunday;
         };
+    }
+    public function convert-int-to-filter(index: int) -> Filter {
+        if (index == 0) {
+            return Filter.Today;
+        } else if (index == 1) {
+            return Filter.All;
+        } else if (index == 2) {
+            return Filter.Once;
+        } else if (index == 3) {
+            return Filter.Daily;
+        } else if (index == 4) {
+            return Filter.Weekly;
+        } else if (index == 5) {
+            return Filter.Monthly;
+        } else {
+            return Filter.Progress;
+        };
+        
     }
     callback add-todo(todo: Todo);
     callback remove-todo(id: string);

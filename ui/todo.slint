@@ -31,6 +31,7 @@ component TodoCard inherits Rectangle {
         padding: UiData.padding;
         spacing: UiData.space;
         HorizontalLayout {
+            padding-left: UiData.padding;
             alignment: start;
             Text {
                 text: day-prefix(day);
@@ -52,7 +53,7 @@ component TodoCard inherits Rectangle {
 
         ListView {
             for todo[i] in todo-list: Text {
-                text: (i + 1) + ". " + todo.text;
+                text: (i + 1) + "." + todo.text;
                 overflow: elide;
                 color: UiData.secondry-text-color;
                 font-size: UiData.font-size-small;
@@ -218,6 +219,7 @@ export component Todo inherits HorizontalLayout {
                         TodoData.new-todo.current-progress = value;
                     }
                 }
+
                 SpinBox {
                     width: type-cb.width;
                     value: TodoData.new-todo.max-progress;
@@ -280,6 +282,15 @@ export component Todo inherits HorizontalLayout {
 
         Rectangle {
             in-out property <int> selected-index;
+            in-out property <[string]> filter-text: [
+                "今天",
+                "全部",
+                "单次",
+                "每日",
+                "每周",
+                "每月",
+                "进度",
+            ];
             border-radius: UiData.border-radius;
             background: UiData.primary-color;
             HorizontalLayout {
@@ -288,20 +299,20 @@ export component Todo inherits HorizontalLayout {
                 padding-right: UiData.padding-big;
                 padding-left: UiData.padding-big;
                 spacing: UiData.space-big;
-                Text {
+                for i in 7: Text {
                     color: UiData.secondry-text-color;
                     opacity: 0.5;
                     font-size: UiData.font-size-big;
-                    text: "全部";
+                    text: filter-text[i];
                     TouchArea {
                         clicked => {
-                            selected-index = 0;
-                            TodoData.filter = Filter.All;
+                            selected-index = i;
+                            TodoData.filter = TodoData.convert-int-to-filter(i);
                         }
                     }
 
                     states [
-                        active when selected-index == 0: {
+                        active when selected-index == i: {
                             opacity: 1;
                         }
                     ]
@@ -310,122 +321,6 @@ export component Todo inherits HorizontalLayout {
                         easing: ease-in-out;
                     }
                 }
-
-                Text {
-                    color: UiData.secondry-text-color;
-                    opacity: 0.5;
-                    font-size: UiData.font-size-big;
-                    text: "单次";
-                    TouchArea {
-                        clicked => {
-                            selected-index = 1;
-                            TodoData.filter = Filter.Once;
-                        }
-                    }
-
-                    states [
-                        active when selected-index == 1: {
-                            opacity: 1;
-                        }
-                    ]
-                    animate opacity {
-                        duration: 0.2s;
-                        easing: ease-in-out;
-                    }
-                }
-
-                Text {
-                    color: UiData.secondry-text-color;
-                    opacity: 0.5;
-                    font-size: UiData.font-size-big;
-                    text: "每日";
-                    TouchArea {
-                        clicked => {
-                            selected-index = 2;
-                            TodoData.filter = Filter.Daily;
-                        }
-                    }
-
-                    states [
-                        active when selected-index == 2: {
-                            opacity: 1;
-                        }
-                    ]
-                    animate opacity {
-                        duration: 0.2s;
-                        easing: ease-in-out;
-                    }
-                }
-
-                Text {
-                    color: UiData.secondry-text-color;
-                    opacity: 0.5;
-                    font-size: UiData.font-size-big;
-                    text: "每周";
-                    TouchArea {
-                        clicked => {
-                            selected-index = 3;
-                            TodoData.filter = Filter.Weekly;
-                        }
-                    }
-
-                    states [
-                        active when selected-index == 3: {
-                            opacity: 1;
-                        }
-                    ]
-                    animate opacity {
-                        duration: 0.2s;
-                        easing: ease-in-out;
-                    }
-                }
-
-                Text {
-                    color: UiData.secondry-text-color;
-                    opacity: 0.5;
-                    font-size: UiData.font-size-big;
-                    text: "每月";
-                    TouchArea {
-                        clicked => {
-                            selected-index = 4;
-                            TodoData.filter = Filter.Monthly
-                        }
-                    }
-
-                    states [
-                        active when selected-index == 4: {
-                            opacity: 1;
-                        }
-                    ]
-                    animate opacity {
-                        duration: 0.2s;
-                        easing: ease-in-out;
-                    }
-                }
-
-                Text {
-                    color: UiData.secondry-text-color;
-                    opacity: 0.5;
-                    font-size: UiData.font-size-big;
-                    text: "进度";
-                    TouchArea {
-                        clicked => {
-                            selected-index = 5;
-                            TodoData.filter = Filter.Progress;
-                        }
-                    }
-
-                    states [
-                        active when selected-index == 5: {
-                            opacity: 1;
-                        }
-                    ]
-                    animate opacity {
-                        duration: 0.2s;
-                        easing: ease-in-out;
-                    }
-                }
-
                 Text {
                     color: UiData.secondry-text-color;
                     horizontal-stretch: 1;

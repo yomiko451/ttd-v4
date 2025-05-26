@@ -48,6 +48,8 @@ fn remove_todo(id: SharedString, app: Weak<AppWindow>) {
     TODOS_MODEL.with(|todos_model| todos_model.borrow_mut().remove_todo(id));
     todo_data
         .set_todo_list(TODOS_MODEL.with(|todos_model| todos_model.borrow().to_todo_list_model()));
+    let new_calendar = TODOS_MODEL.with(|todos_model| todos_model.borrow().to_calendar_model());
+    todo_data.set_calendar(new_calendar);
 }
 
 fn update_month(new_date: SlintDate, app: Weak<AppWindow>) {
@@ -193,6 +195,24 @@ fn filter_todo(filter: Filter, model: ModelRc<Todo>) -> ModelRc<Todo> {
                 .collect::<Vec<Todo>>();
             Rc::new(slint::VecModel::from(vec)).into()
         }
-        _ => model,
+        Filter::Today => {
+            let today = *CURRENT_DATE;
+            let vec = model
+                .iter()
+                .filter(|t| {
+                    match t.kind {
+                        TodoKind::Once => t.once == today.into(),
+                        TodoKind::Daily | TodoKind::Progress => t.start_date <= today.into() && t.end_date >= today.into(),
+                        TodoKind::Weekly => {
+                            let week = t.week as u32;
+                            let current_weekday = today.weekday() as u32;
+                            t.start_date <= today.into() && t.end_date >= today.into() && week == current_weekday
+                        }
+                        TodoKind::Monthly => t.start_date <= today.into() && t.end_date >= today.into() && t.day == today.day() as i32,
+                    }
+                })
+                .collect::<Vec<Todo>>();
+            Rc::new(slint::VecModel::from(vec)).into()
+        },
     }
 }
