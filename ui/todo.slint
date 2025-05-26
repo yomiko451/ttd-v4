@@ -3,8 +3,6 @@ import { Filter, Todo, TodoData, TodoKind, UiData } from "global.slint";
 
 
 component TodoCard inherits Rectangle {
-    horizontal-stretch: 1;
-    vertical-stretch: 1;
     function day-suffix(day: int) -> string {
         if day == 1 || day == 21 || day == 31 {
             return "st";
@@ -16,30 +14,38 @@ component TodoCard inherits Rectangle {
             return "th";
         }
     }
+    //不满10增加0前缀
+    function day-prefix(day: int) -> string {
+        if day < 10 {
+            return "0" + day;
+        } else {
+            return day;
+        }
+    }
     in-out property <int> day;
     in-out property <[Todo]> todo-list;
     background: UiData.primary-color;
     border-radius: UiData.border-radius;
     VerticalLayout {
-        width: 100%;
+        horizontal-stretch: 1;
         padding: UiData.padding;
         spacing: UiData.space;
         HorizontalLayout {
             alignment: start;
             Text {
-                text: day == 0 ? "" : day;
+                text: day-prefix(day);
                 vertical-alignment: center;
                 height: UiData.calendar-index-size;
                 font-size: UiData.calendar-index-size;
-                color: UiData.secondry-text-color;
+                color: day == 0 ? UiData.primary-color : UiData.secondry-text-color;
             }
 
             VerticalLayout {
                 alignment: end;
                 Text {
-                    text: day == 0 ? "" : day-suffix(day);
+                    text: day-suffix(day);
                     font-size: UiData.font-size-big;
-                    color: UiData.secondry-text-color;
+                    color: day == 0 ? UiData.primary-color : UiData.secondry-text-color;
                 }
             }
         }
@@ -57,6 +63,7 @@ component TodoCard inherits Rectangle {
 
 export component Todo inherits HorizontalLayout {
     height: 100%;
+    width: 100%;
     padding-top: UiData.tab-padding-top-bottom;
     padding-bottom: UiData.tab-padding-top-bottom;
     padding-left: UiData.tab-padding-left-right;
@@ -76,7 +83,7 @@ export component Todo inherits HorizontalLayout {
         } else if (TodoData.new-todo.kind == TodoKind.Once && TodoData.new-todo.once < TodoData.current-date) {
             pop-window-text = "请输入正确的待办日期！";
             return false;
-        } else if ((TodoData.new-todo.kind == TodoKind.Daily && TodoData.new-todo.deadline < TodoData.current-date) || (TodoData.new-todo.kind == TodoKind.Weekly && TodoData.new-todo.deadline < TodoData.current-date) || (TodoData.new-todo.kind == TodoKind.Monthly && TodoData.new-todo.deadline < TodoData.new-todo.once)) {
+        } else if (TodoData.new-todo.recurrence && TodoData.new-todo.end-date < TodoData.current-date) {
             pop-window-text = "请输入正确的截止日期！";
             return false;
         } else {
@@ -89,11 +96,50 @@ export component Todo inherits HorizontalLayout {
             return;
         }
         TodoData.new-todo.text = text-le.text;
-        text-le.text = "";
+        TodoData.new-todo.note = note-le.text;
         TodoData.add-todo(TodoData.new-todo);
+        TodoData.new-todo = TodoData.default-todo;
+        reset(); //TODO 失去焦点
     }
+    function reset() {
+        text-le.text = "";
+        note-le.text = ""; // TODO 还有别的加上 
+    }
+    date-picker-once := DatePickerPopup {
+        close-policy: PopupClosePolicy.close-on-click-outside;
+        accepted(date) => {
+            TodoData.new-todo.once = date;
+            self.close();
+        }
+        canceled => {
+            self.close();
+        }
+    }
+
+    date-picker-start-date := DatePickerPopup {
+        close-policy: PopupClosePolicy.close-on-click-outside;
+        accepted(date) => {
+            TodoData.new-todo.start-date = date;
+            self.close();
+        }
+        canceled => {
+            self.close();
+        }
+    }
+
+    date-picker-end-date := DatePickerPopup {
+        close-policy: PopupClosePolicy.close-on-click-outside;
+        accepted(date) => {
+            TodoData.new-todo.end-date = date;
+            self.close();
+        }
+        canceled => {
+            self.close();
+        }
+    }
+
     VerticalLayout {
-        width: 40%;
+        width: parent.width * 0.4;
         spacing: UiData.space;
         HorizontalLayout {
             spacing: UiData.space;
@@ -118,8 +164,8 @@ export component Todo inherits HorizontalLayout {
                 }
             }
 
-            type-cbx := ComboBox {
-                width: UiData.combobox-width;
+            type-cb := ComboBox {
+                width: parent.width * 0.25;
                 model: todo-type;
                 selected(_) => {
                     TodoData.new-todo.kind = TodoData.convert-int-to-todokind(self.current-index);
@@ -128,33 +174,11 @@ export component Todo inherits HorizontalLayout {
                     } else {
                         TodoData.new-todo.recurrence = true;
                     }
+                    reset();
                 }
             }
 
-            date-picker-once := DatePickerPopup {
-                close-policy: PopupClosePolicy.close-on-click-outside;
-                accepted(date) => {
-                    TodoData.new-todo.once = date;
-                    self.close();
-                }
-                canceled => {
-                    self.close();
-                }
-            }
-
-            date-picker := DatePickerPopup {
-                close-policy: PopupClosePolicy.close-on-click-outside;
-                accepted(date) => {
-                    TodoData.new-todo.deadline = date;
-                    self.close();
-                }
-                canceled => {
-                    self.close();
-                }
-            }
-
-            if type-cbx.current-index == 0: HorizontalLayout {
-                horizontal-stretch: 1;
+            if TodoData.new-todo.kind == TodoKind.Once: HorizontalLayout {
                 spacing: UiData.padding;
                 Button {
                     text: TodoData.new-todo.once == TodoData.default-date ? "选择日期" : TodoData.new-todo.once.year + "年" + TodoData.new-todo.once.month + "月" + TodoData.new-todo.once.day + "日";
@@ -163,75 +187,77 @@ export component Todo inherits HorizontalLayout {
                     }
                 }
             }
-            if type-cbx.current-index == 1: HorizontalLayout {
-                vertical-stretch: 1;
-                Button {
-                    text: TodoData.new-todo.deadline == TodoData.default-date ? "截止日期（可选）" : TodoData.new-todo.deadline.year + "年" + TodoData.new-todo.deadline.month + "月" + TodoData.new-todo.deadline.day + "日";
-                    clicked => {
-                        date-picker.show();
-                    }
-                }
-            }
-            if type-cbx.current-index == 2: HorizontalLayout {
-                vertical-stretch: 1;
+            if TodoData.new-todo.kind == TodoKind.Weekly: HorizontalLayout {
                 spacing: UiData.padding;
                 ComboBox {
-                    width: UiData.combobox-width;
+                    width: type-cb.width;
                     model: weeks;
                     selected(_) => {
-                        TodoData.new-todo.week = self.current-index;
-                    }
-                }
-
-                Button {
-                    text: TodoData.new-todo.deadline == TodoData.default-date ? "截止日期（可选）" : TodoData.new-todo.deadline.year + "年" + TodoData.new-todo.deadline.month + "月" + TodoData.new-todo.deadline.day + "日";
-                    clicked => {
-                        date-picker.show();
+                        TodoData.new-todo.week = TodoData.convert-int-to-slintweekday(self.current-index);
                     }
                 }
             }
-            if type-cbx.current-index == 3: HorizontalLayout {
-                vertical-stretch: 1;
+            if TodoData.new-todo.kind == TodoKind.Monthly: HorizontalLayout {
                 spacing: UiData.padding;
                 SpinBox {
-                    width: UiData.spinbox-width;
+                    width: type-cb.width;
                     maximum: 31;
                     minimum: 1;
                     edited(value) => {
                         TodoData.new-todo.day = value;
                     }
                 }
-
-                Button {
-                    text: TodoData.new-todo.deadline == TodoData.default-date ? "截止日期（可选）" : TodoData.new-todo.deadline.year + "年" + TodoData.new-todo.deadline.month + "月" + TodoData.new-todo.deadline.day + "日";
-                    clicked => {
-                        date-picker.show();
-                    }
-                }
             }
-            if type-cbx.current-index == 4: HorizontalLayout {
-                vertical-stretch: 1;
+            if TodoData.new-todo.kind == TodoKind.Progress: HorizontalLayout {
                 spacing: UiData.padding;
                 SpinBox {
-                    width: UiData.spinbox-width;
+                    width: type-cb.width;
                     value: TodoData.new-todo.current-progress;
                     maximum: UiData.spinbox-max;
                     edited(value) => {
                         TodoData.new-todo.current-progress = value;
                     }
                 }
-
-                Spinner {
-                    progress: TodoData.new-todo.current-progress / TodoData.new-todo.max-progress;
-                }
-
                 SpinBox {
-                    width: UiData.spinbox-width;
+                    width: type-cb.width;
                     value: TodoData.new-todo.max-progress;
                     maximum: UiData.spinbox-max;
                     edited(value) => {
                         TodoData.new-todo.max-progress = value;
                     }
+                }
+            }
+            note-le := LineEdit {
+                min-width: parent.width * 0.1;
+                placeholder-text: "可选备注";
+            }
+        }
+
+        HorizontalLayout {
+            width: parent.width;
+            spacing: UiData.space;
+            Button {
+                enabled: TodoData.new-todo.kind != TodoKind.Once;
+                width: parent.width * 0.45;
+                text: TodoData.new-todo.start-date == TodoData.default-date ? "开始日期" : TodoData.new-todo.start-date.year + "年" + TodoData.new-todo.start-date.month + "月" + TodoData.new-todo.start-date.day + "日";
+                clicked => {
+                    date-picker-start-date.show();
+                }
+            }
+
+            Text {
+                text: "<->";
+                vertical-alignment: center;
+                horizontal-alignment: center;
+                horizontal-stretch: 1;
+            }
+
+            Button {
+                enabled: TodoData.new-todo.kind != TodoKind.Once;
+                width: parent.width * 0.45;
+                text: TodoData.new-todo.end-date == TodoData.default-date ? "截止日期" : TodoData.new-todo.end-date.year + "年" + TodoData.new-todo.end-date.month + "月" + TodoData.new-todo.end-date.day + "日";
+                clicked => {
+                    date-picker-end-date.show();
                 }
             }
         }
@@ -439,6 +465,10 @@ export component Todo inherits HorizontalLayout {
 
                         Button {
                             text: "删除";
+                            clicked => {
+                                TodoData.remove-todo(todo.id);
+                                selected-todo = -1;
+                            }
                         }
 
                         Button {
@@ -455,7 +485,7 @@ export component Todo inherits HorizontalLayout {
                         }
 
                         Text {
-                            text: todo.created-at.year + "-" + todo.created-at.month + "-" + todo.created-at.day;
+                            text: todo.created-at;
                         }
 
                         if todo.kind != TodoKind.Progress: Text {
@@ -472,7 +502,6 @@ export component Todo inherits HorizontalLayout {
                         padding-right: UiData.padding;
                         Rectangle {
                             width: UiData.todo-content-marker;
-                            //vertical-stretch: 1;
                             border-radius: UiData.border-radius;
                             background: UiData.primary-color;
                         }
@@ -497,18 +526,18 @@ export component Todo inherits HorizontalLayout {
             Button {
                 text: "上一个月";
                 clicked => {
-                    if TodoData.current-calendar.month - 1 < 1 {
-                        TodoData.current-calendar.month = 12;
-                        TodoData.current-calendar.year -= 1;
+                    if TodoData.selected_date.month - 1 < 1 {
+                        TodoData.selected_date.month = 12;
+                        TodoData.selected_date.year -= 1;
                     } else {
-                        TodoData.current-calendar.month -= 1;
+                        TodoData.selected_date.month -= 1;
                     }
-                    TodoData.update-calendar(TodoData.current-calendar);
+                    TodoData.update-calendar(TodoData.selected_date);
                 }
             }
 
             Text {
-                text: TodoData.current-calendar.year + "年" + TodoData.current-calendar.month + "月";
+                text: TodoData.selected_date.year + "年" + TodoData.selected_date.month + "月";
                 vertical-alignment: center;
                 font-size: UiData.font-size-big;
             }
@@ -516,32 +545,35 @@ export component Todo inherits HorizontalLayout {
             Button {
                 text: "下一个月";
                 clicked => {
-                    if TodoData.current-calendar.month + 1 > 12 {
-                        TodoData.current-calendar.month = 1;
-                        TodoData.current-calendar.year += 1;
+                    if TodoData.selected_date.month + 1 > 12 {
+                        TodoData.selected_date.month = 1;
+                        TodoData.selected_date.year += 1;
                     } else {
-                        TodoData.current-calendar.month += 1;
+                        TodoData.selected_date.month += 1;
                     }
-                    TodoData.update-calendar(TodoData.current-calendar);
+                    TodoData.update-calendar(TodoData.selected_date);
                 }
             }
         }
 
-        HorizontalLayout {
+        VerticalLayout {
             spacing: UiData.space;
-            vertical-stretch: 1;
-            for week-todos[i] in TodoData.calendar: VerticalLayout {
+            horizontal-stretch: 1;
+            HorizontalLayout {
                 spacing: UiData.space;
-                Text {
+                for i in 7: Text {
                     height: default-bt.height;
                     text: weeks[i];
                     horizontal-alignment: center;
                     vertical-alignment: center;
                 }
+            }
 
-                for item in week-todos: TodoCard {
-                    day: item.date.day;
-                    todo-list: item.todo-list;
+            for i in 6: HorizontalLayout {
+                spacing: UiData.space;
+                for j in 7: TodoCard {
+                    day: TodoData.calendar[i * 7 + j].date.day;
+                    todo-list: TodoData.calendar[i * 7 + j].todo-list;
                 }
             }
         }

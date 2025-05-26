@@ -1,14 +1,38 @@
 
+import { UiData } from "global.slint";
 export component About inherits HorizontalLayout {
-    Rectangle {
-            background: red;
-
+    HorizontalLayout {
+        width: parent.width * 0.5;
+        height: 50%;
+        HorizontalLayout {
+            spacing: UiData.space;
+            padding: UiData.space * 4;
+            width: parent.width * 0.5;
+            height: 50%;
+            Rectangle {
+                width: parent.width * 0.5;
+                height: 25%;
+                background: #000000;
+                Rectangle {
+                    width: parent.width * 0.5;
+                    height: 50%;
+                    background:pink;
+                    
+                }
+            }
+            Rectangle {
+                width: 25%;
+                height: 25%;
+                background: #000000;
+                Rectangle {
+                    width: 50%;
+                    height: 50%;
+                    background:pink;
+                    
+                }
+            }
+        
         }
-        Rectangle {
-            background: blue;
-
-        }
-        Rectangle {
-            background: green;
-        }
+    }
 }
+    

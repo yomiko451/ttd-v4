@@ -1,76 +1,78 @@
 use crate::{
-    logic::{SlintDate, APP_PATH}, AppWindow, CalendarItem, Filter, Todo, TodoData, TodoKind
+    logic::{SlintDate, APP_PATH}, model::TODOS_MODEL, AppWindow, CalendarDay, Filter, Todo, TodoData, TodoKind
 };
-use chrono::{Datelike, Days, Local, NaiveDate, Utc};
-use slint::{ComponentHandle, Model, ModelRc, Weak};
-use std::{rc::Rc, sync::LazyLock};
+use chrono::{Datelike, Days, Local, NaiveDate, Utc, Weekday};
+use slint::{ComponentHandle, Model, ModelExt, ModelRc, SharedString, VecModel, Weak};
+use std::{default, rc::Rc, sync::LazyLock};
 
 pub const CURRENT_DATE: LazyLock<NaiveDate> = LazyLock::new(|| Local::now().date_naive());
-
+pub const WEEKDAY: [Weekday; 7] = [Weekday::Mon, Weekday::Tue, Weekday::Wed, Weekday::Thu, Weekday::Fri, Weekday::Sat, Weekday::Sun];
 pub fn set_todo_logic(app: Weak<AppWindow>) {
     let app = app.unwrap();
     let todo_data = app.global::<TodoData>();
     let weak = app.as_weak();
-    todo_data.on_update_calendar(move |new_date: SlintDate| {
-        let app = weak.unwrap();
-        let todo_data = app.global::<TodoData>();
-        let mut new_calendar = get_month_calendar(new_date.into());
-        let todos = todo_data.get_todo_list().iter().collect::<Vec<Todo>>();
-        for todo in &todos {
-            match_date_with_todo(&mut new_calendar, todo)
-        }
-        let model = convert_vec_to_model(new_calendar);
-        app.global::<TodoData>().set_calendar(model);
-    });
+    todo_data.on_update_calendar(move |new_date: SlintDate| update_month(new_date, weak.clone()));
     let weak = app.as_weak();
-    todo_data.on_add_todo(move |mut todo: Todo| {
-        let app = weak.unwrap();
-        let todo_data = app.global::<TodoData>();
-        let mut todos = todo_data.get_todo_list().iter().collect::<Vec<Todo>>();
-        todo.created_at = Local::now().date_naive().into();
-        todo.id = get_timestamp_id().into();
-        todo.days_to_start = calculate_days_to_start(&todo);
-        let mut calendar = todo_data
-            .get_calendar()
-            .iter()
-            .map(|weeks| weeks.iter().collect())
-            .collect::<Vec<Vec<CalendarItem>>>();
-        match_date_with_todo(&mut calendar, &todo);
-        todos.push(todo);
-        save_todos(&todos);
-        todo_data.set_todo_list(Rc::new(slint::VecModel::from(todos)).into());
-    });
-    todo_data.on_filter_todo(filter_todo);
+    todo_data.on_add_todo(move |todo: Todo| add_todo(todo, weak.clone()));
+    let weak = app.as_weak();
+    todo_data.on_remove_todo(move |id: SharedString| remove_todo(id, weak.clone()));
+    todo_data.on_filter_todos(filter_todo);
 }
 
-pub fn init_calendar(app: Weak<AppWindow>) {
+
+fn add_todo(mut todo: Todo, app: Weak<AppWindow>) {
+    let app = app.unwrap();
+    let todo_data = app.global::<TodoData>(); 
+    todo.id = get_timestamp_id().into();
+    todo.created_at = CURRENT_DATE.format("%Y-%m-%d").to_string().into();
+    todo.days_to_start = calculate_days_to_start(&todo);
+    TODOS_MODEL.with(|todos_model|todos_model.borrow_mut().add_todo(todo));
+    todo_data.set_todo_list(TODOS_MODEL.with(|todos_model| todos_model.borrow().to_todo_list_model()));
+    let new_calendar = TODOS_MODEL.with(|todos_model| todos_model.borrow().to_calendar_model());
+    todo_data.set_calendar(new_calendar);
+}
+
+fn remove_todo(id: SharedString, app: Weak<AppWindow>) {
+    let app = app.unwrap();
+    let todo_data = app.global::<TodoData>(); 
+    TODOS_MODEL.with(|todos_model|todos_model.borrow_mut().remove_todo(id));
+    todo_data.set_todo_list(TODOS_MODEL.with(|todos_model|todos_model.borrow().to_todo_list_model()));
+}
+
+fn update_month(new_date: SlintDate, app: Weak<AppWindow>) {
     let app = app.unwrap();
     let todo_data = app.global::<TodoData>();
-    let mut calendar = get_month_calendar(*CURRENT_DATE);
-    let todos = todo_data.get_todo_list().iter().collect::<Vec<Todo>>();
-    for todo in &todos {
-        match_date_with_todo(&mut calendar, todo)
-    }
-    let model = convert_vec_to_model(calendar);
-    todo_data.set_calendar(model);
-    // 顺便初始化当前日期和当前日历
+    let new_calendar = TODOS_MODEL.with(|todos_model| {
+            todos_model.borrow_mut().update_month(new_date.into());
+            todos_model.borrow().to_calendar_model()
+        });
+    todo_data.set_calendar(new_calendar);
+}
+pub fn init_todos(app: Weak<AppWindow>) {
+    let app = app.unwrap();
+    let todo_data = app.global::<TodoData>();
+    // 初始化新待办
+    let default_todo = todo_data.get_default_todo();
+    todo_data.set_new_todo(default_todo);
+    todo_data.set_calendar(TODOS_MODEL.with(|todos_model|todos_model.borrow().to_calendar_model()));
+    todo_data.set_todo_list(TODOS_MODEL.with(|todos_model| todos_model.borrow().to_todo_list_model()));
+    // 顺便初始化当前日期和当前选择日期
     todo_data.set_current_date((*CURRENT_DATE).into());
-    todo_data.set_current_calendar((*CURRENT_DATE).into());
+    todo_data.set_selected_date(TODOS_MODEL.with(|todos_model|todos_model.borrow().get_selected_date()));
 }
 
-fn get_month_calendar(date: NaiveDate) -> Vec<Vec<CalendarItem>> {
+pub fn match_week_with_day(date: NaiveDate) -> Vec<Vec<u32>> {
     let (year, month) = (date.year(), date.month());
     // 创建7个数组对应周一到周日
-    let mut weekdays: Vec<Vec<CalendarItem>> = vec![Vec::new(); 7];
+    let mut weekdays =  Vec::new();
+    
+    for _ in 0..7 {
+        weekdays.push(Vec::new());
+    }
 
     // 获取该月第一天
     let start_date = NaiveDate::from_ymd_opt(year, month, 1).unwrap();
-
-    // 根据第一天星期几补0
-    for i in 0..start_date.weekday().num_days_from_monday() {
-        weekdays[i as usize].push(CalendarItem::default());
-    }
-
+    
     // 获取下个月第一天
     let next_month = if month == 12 {
         NaiveDate::from_ymd_opt(year + 1, 1, 1).unwrap()
@@ -83,37 +85,15 @@ fn get_month_calendar(date: NaiveDate) -> Vec<Vec<CalendarItem>> {
     while current_date < next_month {
         // weekday()返回0-6，其中0是周一
         let weekday = current_date.weekday().num_days_from_monday() as usize;
-        weekdays[weekday].push(CalendarItem {
-            date: SlintDate {
-                year,
-                month: month as i32,
-                day: current_date.day() as i32,
-            },
-            todo_list: ModelRc::default(),
-        });
+        weekdays[weekday].push(current_date.day());
 
         // 前进一天
         current_date = current_date.checked_add_days(Days::new(1)).unwrap();
     }
-
-    // 长度不足6的补0
-    for weeks in weekdays.iter_mut() {
-        while weeks.len() < 6 {
-            weeks.push(CalendarItem::default());
-        }
-    }
-
     weekdays
 }
 
-fn convert_vec_to_model(vec: Vec<Vec<CalendarItem>>) -> ModelRc<ModelRc<CalendarItem>> {
-    let mut model = vec![];
-    for i in vec {
-        let m: ModelRc<CalendarItem> = Rc::new(slint::VecModel::from(i)).into();
-        model.push(m);
-    }
-    Rc::new(slint::VecModel::from(model)).into()
-}
+
 
 fn calculate_days_to_start(todo: &Todo) -> i32 {
     match todo.kind {
@@ -158,84 +138,9 @@ fn calculate_days_to_start(todo: &Todo) -> i32 {
     }
 }
 
-fn save_todos(todos: &Vec<Todo>) {
-    let path = APP_PATH.join("data").join("todo_list.json");
-    let file = std::fs::File::create(path).unwrap();
-    serde_json::to_writer(file, &todos).unwrap();
-}
-
-pub fn load_todos(app: Weak<AppWindow>) {
-    let app = app.unwrap();
-    let path = APP_PATH.join("data").join("todo_list.json");
-    if path.exists() {
-        let todos: Vec<Todo> = serde_json::from_reader(std::fs::File::open(path).unwrap()).unwrap();
-        let model = Rc::new(slint::VecModel::from(todos));
-        app.global::<TodoData>().set_todo_list(model.into());
-    }
-}
-
-fn match_date_with_todo(calendar: &mut Vec<Vec<CalendarItem>>, todo: &Todo) {
-    match todo.kind {
-        TodoKind::Progress => return,
-        TodoKind::Daily => {
-            for week in calendar {
-                for item in week {
-                    if item.date < todo.created_at {
-                        continue;
-                    }
-                    let mut vec = item.todo_list.iter().collect::<Vec<Todo>>();
-                    vec.push((*todo).clone());
-                    item.todo_list = Rc::new(slint::VecModel::from(vec)).into();
-                }
-            }
-        }
-        TodoKind::Weekly => {
-            for (index, week) in calendar.into_iter().enumerate() {
-                for item in week {
-                    if item.date < todo.created_at {
-                        continue;
-                    }
-                    if index == todo.week as usize {
-                        let mut vec = item.todo_list.iter().collect::<Vec<Todo>>();
-                        vec.push((*todo).clone());
-                        item.todo_list = Rc::new(slint::VecModel::from(vec)).into();
-                    }
-                }
-            }
-        }
-        TodoKind::Monthly => {
-            for week in calendar {
-                for item in week {
-                    if item.date < todo.created_at {
-                        continue;
-                    }
-                    if item.date.day == todo.day {
-                        let mut vec = item.todo_list.iter().collect::<Vec<Todo>>();
-                        vec.push((*todo).clone());
-                        item.todo_list = Rc::new(slint::VecModel::from(vec)).into();
-                    }
-                }
-            }
-        }
-
-        TodoKind::Once => {
-            for week in calendar {
-                for item in week {
-                    if item.date.day == todo.once.day && item.date.month == todo.once.month {
-                        let mut vec = item.todo_list.iter().collect::<Vec<Todo>>();
-                        vec.push((*todo).clone());
-                        item.todo_list = Rc::new(slint::VecModel::from(vec)).into();
-                    }
-                }
-            }
-        }
-    }
-}
 
 fn get_timestamp_id() -> String {
-    let timestamp = Utc::now().timestamp();
-    let id = format!("{:x}", timestamp);
-    id
+    Utc::now().timestamp().to_string()
 }
 
 fn filter_todo(filter: Filter, model: ModelRc<Todo>) -> ModelRc<Todo> { 
@@ -264,3 +169,7 @@ fn filter_todo(filter: Filter, model: ModelRc<Todo>) -> ModelRc<Todo> {
         _ => model
     }
 }
+
+
+
+

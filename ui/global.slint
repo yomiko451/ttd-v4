@@ -10,6 +10,16 @@ export enum Filter {
     Completed,
 }
 
+@rust-attr(derive(serde::Serialize, serde::Deserialize))
+export enum SlintWeekday {
+    Monday,
+    Tuesday,
+    Wednesday,
+    Thursday,
+    Friday,
+    Saturday,
+    Sunday,
+}   
 
 @rust-attr(derive(serde::Serialize, serde::Deserialize))
 export enum TodoKind {
@@ -46,19 +56,21 @@ export struct DayAnime {
 export struct Todo {
     id: string,
     text: string,
-    created-at: Date,
+    created-at: string,
     recurrence: bool,
-    week: int,
+    week: SlintWeekday,
     day: int,
     once: Date,
-    current_progress: int,
-    max_progress: int,
-    deadline: Date,
+    current-progress: int,
+    max-progress: int,
+    start-date: Date,
+    end-date: Date,
     kind: TodoKind,
-    days_to_start: int,
+    days-to-start: int,
+    note: string,
 }
 
-export struct CalendarItem {
+export struct CalendarDay {
     date: Date,
     todo-list: [Todo]
 }
@@ -84,13 +96,13 @@ export global UiData {
     in-out property <length> app-height: 800px;
     in-out property <length> avatar-size: 80px;
     in-out property <length> avatar-size-big: 120px;
-    in-out property <color> primary-color: #88C9A1;//rgb(237, 239, 239);
-    in-out property <color> menu-button-clicked-color: #5BB48B;//rgb(221, 221, 221);
+    in-out property <color> primary-color:#6AB187;//#88C9A1;//rgb(237, 239, 239);
+    in-out property <color> menu-button-clicked-color: rgba(255, 255, 255, 0.2);//#5BB48B;//rgb(221, 221, 221);
     in-out property <length> cover-width: 120px;
     in-out property <length> cover-height: 150px;
     in-out property <color> primary-text-color: #303133;
     in-out property <color> secondry-text-color: #FFFFFF;
-    in-out property <color> todo-selected-color: #E5E5E5;
+    in-out property <color> todo-selected-color: rgb(136, 193, 159);
     in-out property <color> warn-text-color: #FF5252; // TODO: 红色要不要
     in-out property <length> default-font-size: 14px;
     in-out property <length> font-size-small: 12px;
@@ -150,33 +162,53 @@ export global TodoData {
             return TodoKind.Progress;
         };
     }
+    public function convert-int-to-slintweekday(index: int) -> SlintWeekday {
+        if (index == 0) {
+            return SlintWeekday.Monday;
+        } else if (index == 1) {
+            return SlintWeekday.Tuesday;
+        } else if (index == 2) {
+            return SlintWeekday.Wednesday;
+        } else if (index == 3) {
+            return SlintWeekday.Thursday;
+        } else if (index == 4) {
+            return SlintWeekday.Friday;
+        } else if (index == 5) {
+            return SlintWeekday.Saturday;
+        } else {
+            return SlintWeekday.Sunday;
+        };
+    }
     callback add-todo(todo: Todo);
-    pure callback filter-todo(filter: Filter, todo: [Todo]) -> [Todo];
+    callback remove-todo(id: string);
+    pure callback filter-todos(filter: Filter, todo: [Todo]) -> [Todo];
     callback update-calendar(new-date: Date);
-    in-out property <[[CalendarItem]]> calendar;
-    //当前日期是不变的，主要用来进行比对，当前日历是随着用户输入的日期而改变的
-    in-out property <Date> current_calendar;
+    in-out property <[CalendarDay]> calendar;
+    in-out property <Date> selected_date;
     in-out property <Date> current-date;
     in-out property <[Todo]> todo-list;
     in-out property <Filter> filter;
-    in-out property <[Todo]> filtered-todo-list: filter-todo(filter, todo-list);
+    in-out property <[Todo]> filtered-todo-list: filter-todos(filter, todo-list);
     in-out property <Date> default-date: {
         year: 2025,
         month: 1,
         day: 1
     };
-    in-out property <Todo> new-todo: {
+    in-out property <Todo> new-todo;
+    in-out property <Todo> default-todo: {
         text: "",
-        created-at: default-date,
+        created-at: "",
         recurrence: false,
-        week: 0,
+        week: SlintWeekday.Monday,
         day: 1,
         once: default-date,
-        current_progress: 50,
-        max_progress: 100,
-        deadline: default-date,
+        current-progress: 50,
+        max-progress: 100,
+        start-date: default-date,
+        end-date: default-date,
         kind: TodoKind.Once,
-        days_to_start: 0
+        days-to-start: 0,
+        note: "",
     };
 }
 

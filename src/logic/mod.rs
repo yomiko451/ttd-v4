@@ -1,14 +1,16 @@
-use chrono::Datelike;
+use chrono::{Datelike, Weekday};
+use slint::ModelRc;
 
 mod anime;
 mod init;
 mod todo;
 
 pub use crate::Date as SlintDate;
+use crate::SlintWeekday;
 pub use anime::{get_anime, init_anime_schedule, set_anime_logic};
 pub use init::{APP_PATH, init};
 use serde::{Deserialize, Serialize};
-pub use todo::{CURRENT_DATE, init_calendar, load_todos, set_todo_logic};
+pub use todo::{CURRENT_DATE, WEEKDAY, init_todos, set_todo_logic, match_week_with_day};
 
 impl Serialize for SlintDate {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -72,3 +74,33 @@ impl From<SlintDate> for chrono::NaiveDate {
         chrono::NaiveDate::from_ymd_opt(date.year, date.month as u32, date.day as u32).unwrap()
     }
 }
+
+impl From<Weekday> for SlintWeekday {
+    fn from(weekday: Weekday) -> Self {
+        match weekday {
+            Weekday::Mon => SlintWeekday::Monday,
+            Weekday::Tue => SlintWeekday::Tuesday,
+            Weekday::Wed => SlintWeekday::Wednesday,
+            Weekday::Thu => SlintWeekday::Thursday,
+            Weekday::Fri => SlintWeekday::Friday,
+            Weekday::Sat => SlintWeekday::Saturday,
+            Weekday::Sun => SlintWeekday::Sunday,
+        }
+    }
+}
+
+impl From<SlintWeekday> for Weekday {
+    fn from(weekday: SlintWeekday) -> Self {
+        match weekday {
+            SlintWeekday::Monday => Weekday::Mon,
+            SlintWeekday::Tuesday => Weekday::Tue,
+            SlintWeekday::Wednesday => Weekday::Wed,
+            SlintWeekday::Thursday => Weekday::Thu,
+            SlintWeekday::Friday => Weekday::Fri,
+            SlintWeekday::Saturday => Weekday::Sat,
+            SlintWeekday::Sunday => Weekday::Sun,
+        }
+    }
+
+}
+

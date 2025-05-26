@@ -1,6 +1,6 @@
 import {Button, HorizontalBox, VerticalBox, TabWidget} from "std-widgets.slint";
 import {Todo} from "./todo.slint";
-import "./assets/font/LXGWWenKaiGBScreen.ttf";
+import "./assets/font/LXGWWenKaiMonoGBScreen.ttf";
 import { Menu } from "menu.slint";
 import { Anime } from "anime.slint";
 import { UiData, Tab, AnimeData, TodoData } from "global.slint";
@@ -9,8 +9,9 @@ import { About } from "about.slint";
 export { AnimeData, TodoData }
 
 
+
 export component AppWindow inherits Window {
-    default-font-family: "霞鹜文楷 GB 屏幕阅读版";
+    default-font-family: "LXGW WenKai Mono GB Screen";
     default-font-size: UiData.default-font-size;
     preferred-height: UiData.app-height;
     preferred-width: UiData.app-width;
