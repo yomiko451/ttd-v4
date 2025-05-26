@@ -17,7 +17,6 @@ pub fn init(app: Weak<AppWindow>) {
     let anime_schedule = crate::logic::init_anime_schedule(app.clone());
     crate::logic::get_anime(app.clone(), anime_schedule);
     crate::logic::init_todos(app.clone());
-    
 }
 
 fn check_data_dir() {
