@@ -73,17 +73,15 @@ impl TodosModel {
     fn load_todos_to_model(&mut self, todos: Vec<Todo>) {
         for mut todo in todos {
             //加载时顺便检测是否过期
-            if todo.end_date < (*CURRENT_DATE).into() {
+            if todo.end_date.to_naive_date() < *CURRENT_DATE || todo.calculate_days_to_start().is_none() {
                 todo.is_expired = true;
-            } else {
-                todo.days_to_start = calculate_days_to_start(&todo);
-            }
+            } 
             self.add_todo_model(todo);
         }
     }
 
     pub fn get_selected_date(&self) -> SlintDate {
-        self.selected_date.into()
+        SlintDate::from_naive_date(&self.selected_date)
     }
     pub fn to_todo_list_model(&self) -> ModelRc<Todo> {
         let mut todos_vec = self
@@ -122,7 +120,7 @@ impl TodosModel {
                 .collect::<Vec<Todo>>();
             let model = Rc::new(VecModel::from(todo_list)).into();
             calendar.push(CalendarDay {
-                date: date.into(),
+                date: SlintDate::from_naive_date(&date),
                 todo_list: model,
             });
         }
@@ -163,7 +161,7 @@ impl TodosModel {
     fn match_todo_with_calendar(&mut self, todo: Rc<RefCell<Todo>>) {
         match todo.borrow().kind {
             TodoKind::Once => {
-                let once: NaiveDate = todo.borrow().once.clone().into();
+                let once: NaiveDate = todo.borrow().once.to_naive_date();
                 if once.year() == self.selected_date.year()
                     && once.month() == self.selected_date.month()
                 {
@@ -178,8 +176,8 @@ impl TodosModel {
                 }
             }
             TodoKind::Daily | TodoKind::Progress => {
-                let start = todo.borrow().start_date.clone().into();
-                let end = todo.borrow().end_date.clone().into();
+                let start = todo.borrow().start_date.to_naive_date();
+                let end = todo.borrow().end_date.to_naive_date();
                 let keys = self
                     .date_todo_map
                     .keys()
@@ -197,8 +195,8 @@ impl TodosModel {
                 }
             }
             TodoKind::Weekly => {
-                let start = todo.borrow().start_date.clone().into();
-                let end = todo.borrow().end_date.clone().into();
+                let start = todo.borrow().start_date.to_naive_date();
+                let end = todo.borrow().end_date.to_naive_date();
                 let week = todo.borrow().week.into();
                 if let Some(days) = self.week_day_map.get(&week) {
                     for day in days {
@@ -223,8 +221,8 @@ impl TodosModel {
                 }
             }
             TodoKind::Monthly => {
-                let start = todo.borrow().start_date.clone().into();
-                let end = todo.borrow().end_date.clone().into();
+                let start = todo.borrow().start_date.to_naive_date();
+                let end = todo.borrow().end_date.to_naive_date();
                 let date = NaiveDate::from_ymd_opt(
                     self.selected_date.year(),
                     self.selected_date.month(),
@@ -297,14 +295,15 @@ pub fn set_todo_logic(app: Weak<AppWindow>) {
     let weak = app.as_weak();
     todo_data.on_remove_todo(move |id: SharedString| remove_todo(id, weak.clone()));
     todo_data.on_filter_todos(filter_todo);
+    todo_data.on_duration_check(|mut todo| todo.calculate_days_to_start().is_some());
 }
 
 fn add_todo(mut todo: Todo, app: Weak<AppWindow>) {
     let app = app.unwrap();
     let todo_data = app.global::<TodoData>();
-    todo.id = get_timestamp_id().into();
+    todo.set_timestamp_id();
     todo.created_at = CURRENT_DATE.format("%Y-%m-%d").to_string().into();
-    todo.days_to_start = calculate_days_to_start(&todo);
+    todo.calculate_days_to_start(); // TODO none返回错误
     TODOS_MODEL.with(|todos_model| todos_model.borrow_mut().add_todo_model(todo));
     todo_data
         .set_todo_list(TODOS_MODEL.with(|todos_model| todos_model.borrow().to_todo_list_model()));
@@ -326,7 +325,7 @@ fn update_month(new_date: SlintDate, app: Weak<AppWindow>) {
     let app = app.unwrap();
     let todo_data = app.global::<TodoData>();
     let new_calendar = TODOS_MODEL.with(|todos_model| {
-        todos_model.borrow_mut().update_calendar_for_model(new_date.into());
+        todos_model.borrow_mut().update_calendar_for_model(new_date.to_naive_date());
         todos_model.borrow().to_calendar_model()
     });
     todo_data.set_calendar(new_calendar);
@@ -342,7 +341,7 @@ pub fn init_todos(app: Weak<AppWindow>) {
     todo_data
         .set_todo_list(TODOS_MODEL.with(|todos_model| todos_model.borrow().to_todo_list_model()));
     // 顺便初始化当前日期和当前选择日期
-    todo_data.set_current_date((*CURRENT_DATE).into());
+    todo_data.set_current_date(SlintDate::from_naive_date(&CURRENT_DATE));
     todo_data.set_selected_date(
         TODOS_MODEL.with(|todos_model| todos_model.borrow().get_selected_date()),
     );
@@ -380,15 +379,21 @@ pub fn match_week_with_day(date: NaiveDate) -> Vec<Vec<u32>> {
     weekdays
 }
 
-fn calculate_days_to_start(todo: &Todo) -> i32 {
-    match todo.kind {
+impl Todo {
+    fn set_timestamp_id(&mut self) {
+    self.id = Utc::now().timestamp().to_string().into();
+}
+
+    fn calculate_days_to_start(&mut self) -> Option<i32> {
+    let days = match self.kind {
         TodoKind::Once => {
-            let date = NaiveDate::from(todo.once.clone());
-            date.signed_duration_since(*CURRENT_DATE).num_days() as i32
+            let date = self.once.to_naive_date();
+            let days = date.signed_duration_since(*CURRENT_DATE).num_days() as i32;
+            days
         }
-        TodoKind::Daily => 0,
+        TodoKind::Daily | TodoKind::Progress => 0,
         TodoKind::Weekly => {
-            let weekday = todo.week as i32;
+            let weekday = self.week as i32;
             let current_weekday = CURRENT_DATE.weekday() as i32;
             if current_weekday > weekday {
                 7 - current_weekday + weekday
@@ -397,7 +402,7 @@ fn calculate_days_to_start(todo: &Todo) -> i32 {
             }
         }
         TodoKind::Monthly => {
-            let day = todo.day;
+            let day = self.day;
             let mut month = CURRENT_DATE.month();
             let day_now = CURRENT_DATE.day() as i32;
             if day_now <= day {
@@ -419,12 +424,18 @@ fn calculate_days_to_start(todo: &Todo) -> i32 {
                 days as i32
             }
         }
-        _ => 0,
+    };
+    let next_date = CURRENT_DATE.checked_add_days(Days::new(days as u64)).unwrap();
+    self.days_to_start = days;
+    println!("{}", next_date);
+    println!("{:?}", self.end_date);
+    println!("{:?}", next_date > self.end_date.to_naive_date());
+    if next_date > self.end_date.to_naive_date() {
+        None
+    } else {
+        Some(days)
     }
 }
-
-fn get_timestamp_id() -> String {
-    Utc::now().timestamp().to_string()
 }
 
 fn filter_todo(filter: Filter, model: ModelRc<Todo>) -> ModelRc<Todo> {
@@ -471,14 +482,14 @@ fn filter_todo(filter: Filter, model: ModelRc<Todo>) -> ModelRc<Todo> {
                 .iter()
                 .filter(|t| {
                     match t.kind {
-                        TodoKind::Once => t.once == today.into(),
-                        TodoKind::Daily | TodoKind::Progress => t.start_date <= today.into() && t.end_date >= today.into(),
+                        TodoKind::Once => t.once.to_naive_date() == today,
+                        TodoKind::Daily | TodoKind::Progress => t.start_date.to_naive_date() <= today && t.end_date.to_naive_date() >= today,
                         TodoKind::Weekly => {
                             let week = t.week as u32;
                             let current_weekday = today.weekday() as u32;
-                            t.start_date <= today.into() && t.end_date >= today.into() && week == current_weekday
+                            t.start_date.to_naive_date() <= today && t.end_date.to_naive_date() >= today && week == current_weekday
                         }
-                        TodoKind::Monthly => t.start_date <= today.into() && t.end_date >= today.into() && t.day == today.day() as i32,
+                        TodoKind::Monthly => t.start_date.to_naive_date() <= today && t.end_date.to_naive_date() >= today && t.day == today.day() as i32,
                     }
                 })
                 .collect::<Vec<Todo>>();

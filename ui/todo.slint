@@ -76,16 +76,19 @@ export component Todo inherits HorizontalLayout {
     in-out property <string> pop-window-text;
     function input_check() -> bool {
         if (text-le.text.is-empty) {
-            pop-window-text = "请先输入待办内容";
+            pop-window-text = "待办内容不能为空！";
             return false;
         } else if (TodoData.new-todo.kind == TodoKind.Once && TodoData.new-todo.once == TodoData.default-date) {
-            pop-window-text = "请先选择待办日期！";
+            pop-window-text = "单次待办必须指定日期！";
             return false;
-        } else if (TodoData.new-todo.kind == TodoKind.Once && TodoData.new-todo.once < TodoData.current-date) {
-            pop-window-text = "请输入正确的待办日期！";
+        } else if (TodoData.new-todo.end-date < TodoData.current-date && TodoData.new-todo.once < TodoData.current-date) {
+            pop-window-text = "待办截止日期不能早于今天！";
             return false;
-        } else if (TodoData.new-todo.recurrence && TodoData.new-todo.end-date < TodoData.current-date) {
-            pop-window-text = "请输入正确的截止日期！";
+        } else if (!TodoData.duration-check(TodoData.new-todo)) {
+            pop-window-text = "起止时间段内没有有效的待办日期!";
+            return false;
+        } else if (TodoData.new-todo.start-date >= TodoData.new-todo.end-date) {
+            pop-window-text = "待办起始日期必须早于截止日期！";
             return false;
         } else {
             return true;
@@ -99,10 +102,13 @@ export component Todo inherits HorizontalLayout {
         TodoData.new-todo.text = text-le.text;
         TodoData.new-todo.note = note-le.text;
         TodoData.add-todo(TodoData.new-todo);
-        TodoData.new-todo = TodoData.default-todo;
+        filter-rt.selected-index = 1;
+        TodoData.filter = Filter.All;
         reset(); //TODO 失去焦点
     }
     function reset() {
+        TodoData.new-todo = TodoData.default-todo;
+        type-cb.current-index = 0;
         text-le.text = "";
         note-le.text = ""; // TODO 还有别的加上 
     }
@@ -175,7 +181,6 @@ export component Todo inherits HorizontalLayout {
                     } else {
                         TodoData.new-todo.recurrence = true;
                     }
-                    reset();
                 }
             }
 
@@ -280,7 +285,7 @@ export component Todo inherits HorizontalLayout {
             }
         }
 
-        Rectangle {
+        filter-rt := Rectangle {
             in-out property <int> selected-index;
             in-out property <[string]> filter-text: [
                 "今天",
@@ -382,12 +387,19 @@ export component Todo inherits HorizontalLayout {
                         Text {
                             text: todo.created-at;
                         }
-
-                        if todo.kind != TodoKind.Progress: Text {
+                        if todo.is_expired: Text {
+                            text: "已过期";
+                            color: UiData.warn-color;
+                        }
+                        if !todo.is-expired && todo.kind != TodoKind.Progress: Text {
                             text: todo.days-to-start == 0 ? "今天" : todo.days-to-start + "天后";
                         }
-                        if todo.kind == TodoKind.Progress: Text {
+                        if !todo.is-expired && todo.kind == TodoKind.Progress: Text {
                             text: "已完成" + todo.current-progress + "/" + todo.max-progress;
+                        }
+                        Text {
+                            text: todo.note;
+                            overflow: elide;
                         }
                     }
 

@@ -104,7 +104,7 @@ export global UiData {
     in-out property <color> primary-text-color: #303133;
     in-out property <color> secondry-text-color: #FFFFFF;
     in-out property <color> todo-selected-color: rgba(106, 177, 135, 0.15);
-    in-out property <color> warn-text-color: #FF5252; // TODO: 红色要不要
+    in-out property <color> warn-color: #FF5252; // TODO: 红色要不要
     in-out property <length> default-font-size: 14px;
     in-out property <length> font-size-small: 12px;
     in-out property <length> font-size-big: 16px;
@@ -200,6 +200,7 @@ export global TodoData {
     }
     callback add-todo(todo: Todo);
     callback remove-todo(id: string);
+    callback duration-check(todo: Todo) -> bool;
     pure callback filter-todos(filter: Filter, todo: [Todo]) -> [Todo];
     callback update-calendar(new-date: Date);
     in-out property <[CalendarDay]> calendar;

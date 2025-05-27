@@ -1,4 +1,4 @@
-use chrono::{Datelike, Weekday};
+use chrono::{Datelike, NaiveDate, Weekday};
 mod anime;
 mod init;
 mod todo;
@@ -57,19 +57,18 @@ impl PartialOrd for SlintDate {
     }
 }
 
-impl From<chrono::NaiveDate> for SlintDate {
-    fn from(date: chrono::NaiveDate) -> Self {
+impl SlintDate {
+    pub fn to_naive_date(&self) -> NaiveDate {
+        NaiveDate::from_ymd_opt(self.year, self.month as u32, self.day as u32)
+            .expect("Invalid date")
+    }
+
+    pub fn from_naive_date(date: &NaiveDate) -> Self {
         SlintDate {
             year: date.year(),
             month: date.month() as i32,
             day: date.day() as i32,
         }
-    }
-}
-
-impl From<SlintDate> for chrono::NaiveDate {
-    fn from(date: SlintDate) -> Self {
-        chrono::NaiveDate::from_ymd_opt(date.year, date.month as u32, date.day as u32).unwrap()
     }
 }
 
