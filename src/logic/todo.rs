@@ -73,7 +73,7 @@ impl TodosModel {
     fn load_todos_to_model(&mut self, todos: Vec<Todo>) {
         for mut todo in todos {
             //加载时顺便检测是否过期
-            if todo.end_date.to_naive_date() < *CURRENT_DATE || todo.calculate_days_to_start().is_none() {
+            if todo.calculate_days_to_start().is_none() {
                 todo.is_expired = true;
             } 
             self.add_todo_model(todo);
@@ -389,7 +389,12 @@ impl Todo {
         TodoKind::Once => {
             let date = self.once.to_naive_date();
             let days = date.signed_duration_since(*CURRENT_DATE).num_days() as i32;
-            days
+            self.days_to_start = days;
+            if days > 0 {
+                return Some(days);
+            } else {
+                return None;
+            }
         }
         TodoKind::Daily | TodoKind::Progress => 0,
         TodoKind::Weekly => {
@@ -425,11 +430,8 @@ impl Todo {
             }
         }
     };
-    let next_date = CURRENT_DATE.checked_add_days(Days::new(days as u64)).unwrap();
     self.days_to_start = days;
-    println!("{}", next_date);
-    println!("{:?}", self.end_date);
-    println!("{:?}", next_date > self.end_date.to_naive_date());
+    let next_date = CURRENT_DATE.checked_add_days(Days::new(days as u64)).unwrap();
     if next_date > self.end_date.to_naive_date() {
         None
     } else {

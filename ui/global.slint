@@ -108,7 +108,8 @@ export global UiData {
     in-out property <length> default-font-size: 14px;
     in-out property <length> font-size-small: 12px;
     in-out property <length> font-size-big: 16px;
-    in-out property <length> font-size-super-big: 18px;
+    in-out property <length> font-size-max: 20px;
+    in-out property <color> sub-text-color: #6c757d;
     in-out property <length> calendar-index-size: 30px;
     in-out property <length> tab-padding-top-bottom: 30px;
     in-out property <length> tab-padding-left-right: 15px;
@@ -116,6 +117,7 @@ export global UiData {
     in-out property <length> spinbox-width: 110px;
     in-out property <length> combobox-width: 100px;
     in-out property <length> space: 5px;
+    in-out property <length> space-small: 2px;
     in-out property <length> space-big: 15px;
     in-out property <length> padding: 5px;
     in-out property <length> padding-big: 10px;
@@ -233,5 +235,9 @@ export global TodoData {
     };
 }
 
-
+export global Icons {
+    in-out property <image> calendar: @image-url("assets/img/calendar.svg");
+    in-out property <image> note: @image-url("assets/img/note.svg");
+    in-out property <image> countdown: @image-url("assets/img/countdown.svg");
+}
 

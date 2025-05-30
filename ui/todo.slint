@@ -1,5 +1,5 @@
 import {Date, Button, LineEdit, HorizontalBox, CheckBox, ComboBox, VerticalBox, DatePickerPopup, Slider, SpinBox, Spinner, TabWidget, GroupBox, GridBox, ListView, ScrollView} from "std-widgets.slint";
-import { Filter, Todo, TodoData, TodoKind, UiData } from "global.slint";
+import { Filter, Todo, TodoData, TodoKind, UiData, Icons } from "global.slint";
 
 
 component TodoCard inherits Rectangle {
@@ -78,17 +78,17 @@ export component Todo inherits HorizontalLayout {
         if (text-le.text.is-empty) {
             pop-window-text = "待办内容不能为空！";
             return false;
-        } else if (TodoData.new-todo.kind == TodoKind.Once && TodoData.new-todo.once == TodoData.default-date) {
-            pop-window-text = "单次待办必须指定日期！";
+        } else if (TodoData.new-todo.kind == TodoKind.Once && TodoData.new-todo.once < TodoData.current-date) {
+            pop-window-text = "单次待办日期不能早于今天！";
             return false;
-        } else if (TodoData.new-todo.end-date < TodoData.current-date && TodoData.new-todo.once < TodoData.current-date) {
+        } else if (TodoData.new-todo.end-date < TodoData.current-date && TodoData.new-todo.kind != TodoKind.Once) {
             pop-window-text = "待办截止日期不能早于今天！";
+            return false;
+        } else if (TodoData.new-todo.start-date >= TodoData.new-todo.end-date && TodoData.new-todo.kind != TodoKind.Once) {
+            pop-window-text = "待办起始日期必须早于截止日期！";
             return false;
         } else if (!TodoData.duration-check(TodoData.new-todo)) {
             pop-window-text = "起止时间段内没有有效的待办日期!";
-            return false;
-        } else if (TodoData.new-todo.start-date >= TodoData.new-todo.end-date) {
-            pop-window-text = "待办起始日期必须早于截止日期！";
             return false;
         } else {
             return true;
@@ -187,6 +187,7 @@ export component Todo inherits HorizontalLayout {
             if TodoData.new-todo.kind == TodoKind.Once: HorizontalLayout {
                 spacing: UiData.padding;
                 Button {
+                    width: type-cb.width * 1.5;
                     text: TodoData.new-todo.once == TodoData.default-date ? "选择日期" : TodoData.new-todo.once.year + "年" + TodoData.new-todo.once.month + "月" + TodoData.new-todo.once.day + "日";
                     clicked => {
                         date-picker-once.show();
@@ -376,48 +377,77 @@ export component Todo inherits HorizontalLayout {
                         }
                     }
                     padding: UiData.padding;
-                    spacing: UiData.padding;
-                    HorizontalLayout {
-                        alignment: start;
-                        spacing: UiData.space-big;
-                        Text {
-                            text: TodoData.format-todokind(todo.kind);
-                        }
-
-                        Text {
-                            text: todo.created-at;
-                        }
-                        if todo.is_expired: Text {
-                            text: "已过期";
-                            color: UiData.warn-color;
-                        }
-                        if !todo.is-expired && todo.kind != TodoKind.Progress: Text {
-                            text: todo.days-to-start == 0 ? "今天" : todo.days-to-start + "天后";
-                        }
-                        if !todo.is-expired && todo.kind == TodoKind.Progress: Text {
-                            text: "已完成" + todo.current-progress + "/" + todo.max-progress;
-                        }
-                        Text {
-                            text: todo.note;
-                            overflow: elide;
-                        }
-                    }
-
+                    spacing: UiData.space;
                     HorizontalLayout {
                         spacing: UiData.space;
-                        padding-left: UiData.padding;
-                        padding-right: UiData.padding;
                         Rectangle {
                             width: UiData.todo-content-marker;
                             border-radius: UiData.border-radius;
                             background: UiData.primary-color;
                         }
 
-                        Text {
-                            horizontal-stretch: 1;
-                            text: todo.text;
-                            wrap: word-wrap;
-                            font-size: UiData.font-size-super-big;
+                        VerticalLayout {
+                            padding-left: UiData.padding;
+                            padding-right: UiData.padding;
+                            Text {
+                                horizontal-stretch: 1;
+                                text: todo.text;
+                                wrap: word-wrap;
+                                font-size: UiData.font-size-max;
+                            }
+
+                            HorizontalLayout {
+                                padding-top: UiData.padding;
+                                alignment: start;
+                                spacing: UiData.space-big;
+                                HorizontalLayout {
+                                    spacing: UiData.space-small;
+                                    Image {
+                                        width: UiData.default-font-size;
+                                        source: Icons.calendar;
+                                    }
+
+                                    Text {
+                                        color: UiData.sub-text-color;
+                                        text: TodoData.format-todokind(todo.kind);
+                                    }
+                                }
+
+                                HorizontalLayout {
+                                    spacing: UiData.space-small;
+                                    Image {
+                                        width: UiData.default-font-size;
+                                        source: Icons.countdown;
+                                    }
+
+                                    if todo.is_expired: Text {
+                                        text: "已过期";
+                                        color: UiData.warn-color;
+                                    }
+                                    if !todo.is-expired && todo.kind != TodoKind.Progress: Text {
+                                        text: todo.days-to-start == 0 ? "今天" : todo.days-to-start + "天后";
+                                        color: UiData.sub-text-color;
+                                    }
+                                    if !todo.is-expired && todo.kind == TodoKind.Progress: Text {
+                                        text: "已完成" + todo.current-progress + "/" + todo.max-progress;
+                                        color: UiData.sub-text-color;
+                                    }
+                                }
+
+                                HorizontalLayout {
+                                    spacing: UiData.space-small;
+                                    Image {
+                                        width: UiData.default-font-size;
+                                        source: Icons.note;
+                                    }
+
+                                    Text {
+                                        overflow: elide;
+                                        color: UiData.sub-text-color;
+                                        text: todo.note.is-empty ? "暂无备注" : todo.note;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
